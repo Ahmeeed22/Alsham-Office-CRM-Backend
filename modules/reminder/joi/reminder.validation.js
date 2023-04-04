@@ -36,6 +36,7 @@ module.exports = {
             offset : Joi.number().min(0),
             companyName : Joi.string(),
             dateExpire : Joi.date().iso(),
+            endExpire : Joi.date().iso() 
         }).min(1)
     },
     }

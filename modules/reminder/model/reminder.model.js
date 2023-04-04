@@ -10,12 +10,10 @@ const Reminder = sequelize.define('reminder', {
     },
     companyName: {
         type: DataTypes.STRING,
-        unique:true,
         allowNull: false
     },
     sponsored: {
         type: DataTypes.STRING,
-        unique:true,
         allowNull: false
     },
     message: {

@@ -64,10 +64,10 @@ const loggerRoute=new LoggerService('error.route')
     HistoryTransactions.belongsTo(Transaction, {
         foreignKey: 'transaction_id',
     });
-    HistoryTransactions.belongsTo(Company, {
+    HistoryTransactions.belongsTo(Company, { 
         foreignKey: 'company_id',
     });
-    Transaction.belongsTo(Customer, {
+    Transaction.belongsTo(Customer, { 
         foreignKey: 'customer_id',
     });
     Transaction.belongsTo(Service, { 
@@ -76,6 +76,9 @@ const loggerRoute=new LoggerService('error.route')
     Reminder.belongsTo(Service, {
         foreignKey: 'service_id',
     });
+    Reminder.belongsTo(User, {
+        foreignKey: 'admin_id',
+      });
     
  
 app.use(cookieParser());
