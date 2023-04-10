@@ -8,7 +8,7 @@ const User = require("../../users/model/user.model");
 
 const getAllReminders = catchAsyncError(async (req, res, next) => {
     const indexInputs = req.body;
-    console.log(indexInputs);
+    // console.log(indexInputs);
     const filterObj = {
         where: {},
         // limit: indexInputs.limit || 10,
@@ -90,9 +90,9 @@ const updateReminder=catchAsyncError( async(req, res , next)=>{
         // if (!(dateExpire.getFullYear() === oldExpireDate.getFullYear()
         // && dateExpire.getMonth() === oldExpireDate.getMonth()
         // && dateExpire.getDate() === oldExpireDate.getDate())) {
-        //     console.log('The two dates are on NOT the same day.');
+        //     console.log('The two dates are on NOT the same day.'); 
         //     await Reminder.update({ status:'new' }, { where:{ id} });
-        // }
+        // } 
 
         var reminderUpdated =await Reminder.update({message,dateExpire,status:'new',admin_id:req.loginData.id},{where:{id}}) ;
         res.status(StatusCodes.OK).json({message:"success",result:reminderUpdated})
