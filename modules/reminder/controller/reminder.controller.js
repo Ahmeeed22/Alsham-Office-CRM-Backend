@@ -2,7 +2,7 @@ const Reminder = require("../model/reminder.model");
 const { StatusCodes } = require("http-status-codes");
 const AppError = require("../../../helpers/AppError");
 const { catchAsyncError } = require("../../../helpers/catchSync");
-const { Op, Sequelize } = require("sequelize");
+const { Op } = require("sequelize");
 const Service = require("../../services/model/service.model");
 const User = require("../../users/model/user.model");
 
@@ -55,12 +55,13 @@ const getAllReminders = catchAsyncError(async (req, res, next) => {
                 [Op.like] :`%${indexInputs.companyName}%`
            }   
         }
+        filter.company_id=req.loginData.company_id ;
         filterObj.where=filter
     } else {
         filterObj.where={ [Op.or]:[ 
             {dateExpire: { [Op.between]: [ dateExpire,dateExpire]  }},
             {status : 'pending'}
-                        ]}
+                        ],company_id:req.loginData.company_id}
     }    
     
 
@@ -75,7 +76,7 @@ const getAllReminders = catchAsyncError(async (req, res, next) => {
 // add reminder controller
 const addReminder=catchAsyncError(async (req,res,next)=>{ 
             console.log(req.loginData.id);
-            var reminder = await Reminder.create({...req.body,admin_id:req.loginData.id});
+            var reminder = await Reminder.create({...req.body,admin_id:req.loginData.id,company_id:req.loginData.company_id});
             res.status(StatusCodes.CREATED).json({message:"success",result:reminder})
 })
 

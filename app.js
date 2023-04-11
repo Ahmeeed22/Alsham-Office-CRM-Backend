@@ -79,6 +79,9 @@ const loggerRoute=new LoggerService('error.route')
     Reminder.belongsTo(User, {
         foreignKey: 'admin_id',
       });
+      Reminder.belongsTo(Company, { 
+        foreignKey: 'company_id',
+    });
     
  
 app.use(cookieParser());
