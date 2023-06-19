@@ -5,8 +5,14 @@ const { catchAsyncError } = require("../../../helpers/catchSync");
 const { Op } = require("sequelize");
 const Service = require("../../services/model/service.model");
 const User = require("../../users/model/user.model");
+const LoggerService = require("../../../services/logger.service");
+const { log } = require("winston");
+const logger=new LoggerService('reminder.backup');
 
 const getAllReminders = catchAsyncError(async (req, res, next) => {
+    console.log("test");
+    // const cc=await Reminder.findAll()
+    // logger.info( JSON.stringify(cc))
     const indexInputs = req.body;
     // console.log(indexInputs);
     const filterObj = {

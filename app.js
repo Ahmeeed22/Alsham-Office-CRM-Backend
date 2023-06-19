@@ -64,7 +64,7 @@ const loggerRoute=new LoggerService('error.route')
     HistoryTransactions.belongsTo(Transaction, {
         foreignKey: 'transaction_id',
     });
-    HistoryTransactions.belongsTo(Company, { 
+    HistoryTransactions.belongsTo(Company, {    
         foreignKey: 'company_id',
     });
     Transaction.belongsTo(Customer, { 

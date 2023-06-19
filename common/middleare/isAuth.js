@@ -25,3 +25,11 @@ module.exports = (authRole="ALL")=>{
         }
     }
 }
+/**
+ * 
+Please reach out to Netlify support team & ask them to add Google workspace MX records with Netlify your web host.
+
+https://support.google.com/a/answer/174125?hl=en&sjid=14758401563552248255-AP#zippy=%2Ci-signed-up-in-or-later
+
+Please understand I'm from Google domains & can help you with editing DNS at https://domains.google.com/registrar/trendvisit.com/dns/ at this page.
+ */
