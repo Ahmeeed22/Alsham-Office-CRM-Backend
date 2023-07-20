@@ -5,7 +5,7 @@ process.on('uncaughtException',err=>{
 
 // winston
 const express= require("express");
-require("dotenv").config();
+require("dotenv").config(); 
 const createTable = require("./modules");
 const Customer = require("./modules/customers/model/customer.model");
 const customersRoutes = require("./modules/customers/routes/customer.routes");
@@ -26,6 +26,8 @@ const HistoryTransactions = require("./modules/historyTransaction/model/history.
 const historyTransactionsRoutes = require("./modules/historyTransaction/routes/history.transactions.routes");
 const remindersRoutes = require("./modules/reminder/routes/reminder.route");
 const Reminder = require("./modules/reminder/model/reminder.model");
+const transactionAccountRoutes = require("./modules/transactionAccount/routes/transactionAccounts.routes");
+const TransactionAccount = require("./modules/transactionAccount/model/transactionAccounts.model");
 
 const app =express();
 app.use(cors())
@@ -82,6 +84,14 @@ const loggerRoute=new LoggerService('error.route')
       Reminder.belongsTo(Company, { 
         foreignKey: 'company_id',
     });
+
+    Company.hasMany(TransactionAccount,{
+        foreignKey : 'company_id'
+    })
+
+    TransactionAccount.belongsTo(Company, { 
+        foreignKey: 'company_id',
+    }); 
     
  
 app.use(cookieParser());
@@ -94,6 +104,8 @@ app.use('/api/v1',transactionsRoutes);
 app.use('/api/v1',companyRoutes)
 app.use('/api/v1',historyTransactionsRoutes)
 app.use('/api/v1',remindersRoutes)
+app.use('/api/v1',transactionAccountRoutes)
+
 
 // handle wronge routes 
 app.all("*",(req,res,next)=>{
