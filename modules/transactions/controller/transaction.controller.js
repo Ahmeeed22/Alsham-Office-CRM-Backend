@@ -168,7 +168,6 @@ const deleteTransaction = catchAsyncError(async (req, res, next) => {
 
 const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     const indexInputs = req.body;
-    console.log(" req.body", req.body, " req.body");
     const filterObj = {
         where: {},
         limit: indexInputs.limit || 10,
@@ -195,8 +194,7 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
         filterObj.where.balanceDue = { [Op.gte]: indexInputs.balanceDue };
     }
 
-    // try {
-    // console.log(filterObj.where);
+
     var transactionsInfo = await Transaction.findAndCountAll({
         where: filterObj.where
         , attributes: [
@@ -209,22 +207,33 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
             [
                 Sequelize.fn(
                     'SUM',
+                    Sequelize.where(Sequelize.col('profite'), '*', Sequelize.col('quantity'))
+                ),
+                'total_profite_gross',
+            ],
+            [
+                Sequelize.fn(
+                    'SUM',
                     Sequelize.where(Sequelize.col('paymentAmount'), '+', Sequelize.col('balanceDue'))
                 ),
                 'total_price',
+            ],
+            [
+                Sequelize.fn(
+                    'SUM',
+                    Sequelize.where(Sequelize.col('price'), '*', Sequelize.col('quantity'))
+                ),
+                'total_price_without_profite'
             ]
         ],
     })
 
-    // Calculate the sum of the virtual attribute "totalprice"
-    console.log("testttt", transactionsInfo?.rows[0]?.dataValues?.total_price);
 
-    // console.log(transactionsInfo[0].dataValues.paymentAmount);
-    console.log(transactionsInfo);
-    var count = transactionsInfo?.count;
-    var paymentAmount = transactionsInfo?.rows[0]?.dataValues?.paymentAmount;
-    var balanceDue = transactionsInfo?.rows[0]?.dataValues?.balanceDue;
-    var sumPrice = transactionsInfo?.rows[0]?.dataValues?.sumPrice;
+    var count = +transactionsInfo?.count;
+    var paymentAmount = +transactionsInfo?.rows[0]?.dataValues?.paymentAmount;
+    var balanceDue = +transactionsInfo?.rows[0]?.dataValues?.balanceDue;
+    var total_profite_gross=+transactionsInfo?.rows[0]?.dataValues?.total_profite_gross;
+    var total_price_without_profite = +transactionsInfo?.rows[0]?.dataValues?.total_price_without_profite;
 
     filterObjAccount.where = { ...filterObj.where, type: 'supply' }
     var transactionAccountSumSupply = await TransactionAccount.findAndCountAll({
@@ -235,7 +244,7 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
             ]
         ],
     })
-    var sumSupply = transactionAccountSumSupply?.rows[0]?.dataValues?.sumSupply || 0;
+    var sumSupply = +transactionAccountSumSupply?.rows[0]?.dataValues?.sumSupply || 0;
 
     filterObjAccount.where = { ...filterObj.where, type: 'expenses' }
     // console.log("filterObjAccount",filterObjAccount);
@@ -247,12 +256,26 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
             ]
         ],
     })
-    var sumExpenses = transactionAccountSumExpenses?.rows[0]?.dataValues?.sumExpenses || 0;
-    // console.log("price ",price,"paymentAmount ",paymentAmount,"sumSupply ",sumSupply,"sumExpenses ",sumExpenses);
+    var sumExpenses = +transactionAccountSumExpenses?.rows[0]?.dataValues?.sumExpenses || 0;
+    
+    var filterPettyCash=  { 
+        company_id: req.loginData?.company_id||1,
+        name:{
+            [Op.like]: `%petty Cash%`
+        }
+      }
+      let customers = await Customer.findAll({ where:filterPettyCash   ,include:[ {model:Transaction,attributes: ['paymentAmount', "id"]}],});
+      const customersdeposit = await Customer.findAll({
+        attributes: [
+          [Sequelize.fn('sum', Sequelize.col('deposite')), 'totalDeposit'],
+        ],
+      });
+    var pettyCash = +customers[0].transactions[0].paymentAmount ; 
+    var totalDeposit= +customersdeposit[0].dataValues.totalDeposit ; 
+    var total_price = +transactionsInfo?.rows[0]?.dataValues?.total_price ;
+    var currentCash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses  - total_price_without_profite;
 
-    var currentCash = paymentAmount - sumSupply - sumExpenses;
-    var profite = (sumPrice || 0) - (sumExpenses || 0);
-    res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash, profite, balanceDue, count, sumSupply, grossPrice: sumPrice, transactionAccountSumExpenses, paymentAmount ,total_price:transactionsInfo?.rows[0]?.dataValues?.total_price} })
-})
+    res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash,total_profite_gross, balanceDue, paymentAmount, count, sumSupply, transactionAccountSumExpenses ,total_price,pettyCash,totalDeposit,total_price_without_profite} })
+}) ; 
 
 module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary }
