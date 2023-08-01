@@ -28,6 +28,14 @@ const remindersRoutes = require("./modules/reminder/routes/reminder.route");
 const Reminder = require("./modules/reminder/model/reminder.model");
 const transactionAccountRoutes = require("./modules/transactionAccount/routes/transactionAccounts.routes");
 const TransactionAccount = require("./modules/transactionAccount/model/transactionAccounts.model");
+const TransactionAccountBanking = require("./modules/bankingTransactionHistory/model/bankingTransactionHistory.model");
+const BankAccount = require("./modules/banking/model/bank.model");
+const supplierRoutes = require("./modules/supplier/route/supplier.route");
+const supplierStatementAccountRoutes = require("./modules/supplierStatementAccount/route/supplierStatementAccount.route");
+const bankingTransactionHistoryRoutes = require("./modules/bankingTransactionHistory/routes/bankingTransactionHistory.route");
+const bankAccountRoutes = require("./modules/banking/routes/bank.route");
+const SupplierStatementAccount = require("./modules/supplierStatementAccount/model/supplierStatementAccount.model");
+const Supplier = require("./modules/supplier/model/supplier.model");
 
 const app =express();
 app.use(cors())
@@ -92,6 +100,18 @@ const loggerRoute=new LoggerService('error.route')
     TransactionAccount.belongsTo(Company, { 
         foreignKey: 'company_id',
     }); 
+
+    TransactionAccountBanking.belongsTo(BankAccount, { foreignKey: 'accountId' });
+    BankAccount.hasMany(TransactionAccountBanking, { foreignKey: 'accountId' });
+
+    BankAccount.belongsTo(Company, { foreignKey: 'company_id' });
+    Company.hasMany(BankAccount, { foreignKey: 'company_id' });
+
+    SupplierStatementAccount.belongsTo(Supplier, { foreignKey: 'supplierId' });
+    Supplier.hasMany(SupplierStatementAccount, { foreignKey: 'supplierId' });
+
+    Supplier.belongsTo(Company, { foreignKey: 'company_id' });
+    Company.hasMany(Supplier, { foreignKey: 'company_id' });
     
  
 app.use(cookieParser());
@@ -105,6 +125,10 @@ app.use('/api/v1',companyRoutes)
 app.use('/api/v1',historyTransactionsRoutes)
 app.use('/api/v1',remindersRoutes)
 app.use('/api/v1',transactionAccountRoutes)
+app.use('/api/v1',bankAccountRoutes)
+app.use('/api/v1',bankingTransactionHistoryRoutes)
+app.use('/api/v1',supplierRoutes)
+app.use('/api/v1',supplierStatementAccountRoutes)
 
 
 // handle wronge routes 

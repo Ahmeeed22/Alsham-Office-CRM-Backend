@@ -27,7 +27,9 @@ const TransactionAccount =sequelize.define('transactionAccount',{
     active:{
         type: Sequelize.BOOLEAN,
         defaultValue: true,
-    }
+    },
+    
+
 });
 
    

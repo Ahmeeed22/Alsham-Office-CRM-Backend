@@ -9,6 +9,10 @@ const { catchAsyncError } = require("../../../helpers/catchSync");
 const LoggerService = require("../../../services/logger.service");
 const HistoryTransactions = require("../../historyTransaction/model/history.transactions.model");
 const TransactionAccount = require("../../transactionAccount/model/transactionAccounts.model");
+const TransactionAccountBanking = require("../../bankingTransactionHistory/model/bankingTransactionHistory.model");
+const BankAccount = require("../../banking/model/bank.model");
+const Supplier = require("../../supplier/model/supplier.model");
+const SupplierStatementAccount = require("../../supplierStatementAccount/model/supplierStatementAccount.model");
 
 const logger = new LoggerService('transaction.controller')
 
@@ -105,14 +109,50 @@ const getAllTransactions = catchAsyncError(async (req, res, next) => {
 
 const addTransaction = catchAsyncError(async (req, res, next) => {
     // try{
-    if ((req.body.paymentAmount + req.body.balanceDue) == ((req.body.price + req.body.profite) * req.body.quantity)) {
+    if ((req.body.paymentAmount + req.body.balanceDue) === ((req.body.price + req.body.profite) * req.body.quantity)) {
+        if (req.body.accountId) {
+            let bankAccount;
+                bankAccount = await BankAccount.findOne({
+                    where: { id: req.body.accountId },
+                });
+            if (bankAccount && bankAccount.balance >= (req.body.price * req.body.quantity)) {
 
-        var transaction = await Transaction.create(req.body);
-        // add history transaction
-        let date = new Date()
-        var historyTransaction = await HistoryTransactions.create({ details: `the fist payment Amount  = ${transaction.dataValues.paymentAmount} at ${date.toLocaleDateString()} ${date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()}`, transaction_id: transaction.dataValues.id, company_id: req.loginData.company_id })
+                var transaction = await Transaction.create(req.body);
+                // add history transaction
+                let date = new Date()
+                var historyTransaction = await HistoryTransactions.create({ details: `the fist payment Amount  = ${transaction.dataValues.paymentAmount} at ${date.toLocaleDateString()} ${date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()}`, transaction_id: transaction.dataValues.id, company_id: req.loginData.company_id });
 
-        res.status(StatusCodes.CREATED).json({ message: "success", result: transaction, historyTransaction: historyTransaction })
+                var transactionAccountBanking = await TransactionAccountBanking.create({ type: "withdraw", amount: req.body.price * req.body.quantity, accountId: req.body.accountId });
+
+                const updatedBalance = +bankAccount.balance - (+req.body.price * +req.body.quantity);
+                const updateBankAccount = await BankAccount.update({ balance: updatedBalance }, { where: { id: bankAccount.id } });
+
+                res.status(StatusCodes.CREATED).json({ message: "success", result: transaction, historyTransaction: historyTransaction, transactionAccountBanking, updateBankAccount })
+
+            } else {
+                res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid bank account or Insufficient balance." })
+            }
+        } else if(req.body.visa) {
+            // handle here visa transaction apply 
+            let supplierAccount;
+                supplierAccount = await Supplier.findOne({
+                    where: { id: req.body.supplierId },
+                });
+                if (supplierAccount && supplierAccount.balance >= (req.body.price * req.body.quantity)) {
+                    const transaction = await Transaction.create(req.body);
+                    const supplierStatementAccount = await SupplierStatementAccount.create({ type: "debit", amount: req.body.price * req.body.quantity,supplierId:req.body.supplierId, desc: `${req.body.sponsoredName}` });
+
+                    const updatedBalance=+supplierAccount.balance - (+req.body.price * +req.body.quantity) ;
+                    const updateSupplierAccount = await Supplier.update({ balance: updatedBalance }, { where: { id: supplierAccount.id } });
+
+                    res.status(StatusCodes.CREATED).json({ message: "success", result: transaction, supplierStatementAccount, updateSupplierAccount })
+
+                }else{
+                    res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid supplier account or Insufficient balance." }) ;      
+                }    
+        }
+
+
     } else {
         res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid data of payamount and balance" })
     }
@@ -145,7 +185,7 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
     //     // res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message : 'error' , error})
     // }
 })
-
+ 
 const deleteTransaction = catchAsyncError(async (req, res, next) => {
     //    try {
     const id = req.params.id;
@@ -232,7 +272,7 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     var count = +transactionsInfo?.count;
     var paymentAmount = +transactionsInfo?.rows[0]?.dataValues?.paymentAmount;
     var balanceDue = +transactionsInfo?.rows[0]?.dataValues?.balanceDue;
-    var total_profite_gross=+transactionsInfo?.rows[0]?.dataValues?.total_profite_gross;
+    var total_profite_gross = +transactionsInfo?.rows[0]?.dataValues?.total_profite_gross;
     var total_price_without_profite = +transactionsInfo?.rows[0]?.dataValues?.total_price_without_profite;
 
     filterObjAccount.where = { ...filterObj.where, type: 'supply' }
@@ -257,25 +297,25 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
         ],
     })
     var sumExpenses = +transactionAccountSumExpenses?.rows[0]?.dataValues?.sumExpenses || 0;
-    
-    var filterPettyCash=  { 
-        company_id: req.loginData?.company_id||1,
-        name:{
+
+    var filterPettyCash = {
+        company_id: req.loginData?.company_id || 1,
+        name: {
             [Op.like]: `%petty Cash%`
         }
-      }
-      let customers = await Customer.findAll({ where:filterPettyCash   ,include:[ {model:Transaction,attributes: ['paymentAmount', "id"]}],});
-      const customersdeposit = await Customer.findAll({
+    }
+    let customers = await Customer.findAll({ where: filterPettyCash, include: [{ model: Transaction, attributes: ['paymentAmount', "id"] }], });
+    const customersdeposit = await Customer.findAll({
         attributes: [
-          [Sequelize.fn('sum', Sequelize.col('deposite')), 'totalDeposit'],
+            [Sequelize.fn('sum', Sequelize.col('deposite')), 'totalDeposit'],
         ],
-      });
-    var pettyCash = +customers[0].transactions[0].paymentAmount ; 
-    var totalDeposit= +customersdeposit[0].dataValues.totalDeposit ; 
-    var total_price = +transactionsInfo?.rows[0]?.dataValues?.total_price ;
-    var currentCash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses  - total_price_without_profite;
+    });
+    var pettyCash = +customers[0].transactions[0].paymentAmount;
+    var totalDeposit = +customersdeposit[0].dataValues.totalDeposit;
+    var total_price = +transactionsInfo?.rows[0]?.dataValues?.total_price;
+    var currentCash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite;
 
-    res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash,total_profite_gross, balanceDue, paymentAmount, count, sumSupply, transactionAccountSumExpenses ,total_price,pettyCash,totalDeposit,total_price_without_profite} })
-}) ; 
+    res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash, total_profite_gross, balanceDue, paymentAmount, count, sumSupply, transactionAccountSumExpenses, total_price, pettyCash, totalDeposit, total_price_without_profite } })
+});
 
 module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary }

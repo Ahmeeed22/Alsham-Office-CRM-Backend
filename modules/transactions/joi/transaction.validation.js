@@ -14,10 +14,13 @@ module.exports = {
             company_id : Joi.number().min(1) ,
             sponsoredName : Joi.string(),
             active : Joi.boolean().default(true),
-        })
+            accountId : Joi.number().optional().allow(null),
+            visa : Joi.boolean().default(false) ,
+            supplierId : Joi.number().optional().allow(null),
+        }) 
     },
     deleteTransactionSchema:{
-        params: Joi.object().required().keys({
+        params: Joi.object().required().keys({ 
             id : Joi.number().required()
         }),
     }  

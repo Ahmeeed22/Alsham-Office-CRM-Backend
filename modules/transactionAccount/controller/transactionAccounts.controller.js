@@ -3,6 +3,8 @@ const AppError = require("../../../helpers/AppError");
 const { catchAsyncError } = require("../../../helpers/catchSync");
 const TransactionAccount = require("../model/transactionAccounts.model");
 const { Op, Sequelize } = require("sequelize");
+const BankAccount = require("../../banking/model/bank.model");
+const TransactionAccountBanking = require("../../bankingTransactionHistory/model/bankingTransactionHistory.model");
 
 const getAllTransactionAccount=catchAsyncError(async(req,res,next)=>{
     const indexInputs =  req.body ;
@@ -57,8 +59,35 @@ const getAllTransactionAccount=catchAsyncError(async(req,res,next)=>{
 
 const addTransactionAccount=catchAsyncError(async (req,res,next)=>{
         const company_id=req.loginData?.company_id ||1
-        var transactionAccount = await TransactionAccount.create({...req.body,company_id});
-        res.status(StatusCodes.CREATED).json({message:"success",result:transactionAccount})
+
+        if (req.body.accountId) {
+            let bankAccount;
+                bankAccount = await BankAccount.findOne({
+                    where: { id: req.body.accountId },
+                });
+                console.log("68",bankAccount.id);
+                console.log("bankAccount.balance >= (+req.amount)",bankAccount.balance >= (+req.amount));
+                console.log(bankAccount.balance);
+                console.log(req.amount);
+            if (bankAccount && +bankAccount.balance >= (+req.body.amount)) {
+
+                var transactionAccountBanking = await TransactionAccountBanking.create({ type: "withdraw", amount: req.body.amount, accountId: req.body.accountId });
+
+                const updatedBalance = +bankAccount.balance - (+req.body.amount);
+                const updateBankAccount = await BankAccount.update({ balance: updatedBalance }, { where: { id: bankAccount.id } });
+
+                // res.status(StatusCodes.CREATED).json({ message: "success", result: transaction, historyTransaction: historyTransaction, transactionAccountBanking, updateBankAccount })
+                var transactionAccount = await TransactionAccount.create({...req.body,company_id});
+                res.status(StatusCodes.CREATED).json({message:"success",result:transactionAccount})
+
+            } else {
+                res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid bank account or Insufficient balance." })
+            }
+        }else{
+            var transactionAccount = await TransactionAccount.create({...req.body,company_id});
+            res.status(StatusCodes.CREATED).json({message:"success",result:transactionAccount})
+        }
+
 })
 
 const updateTransactionAccount=catchAsyncError( async (req,res,next)=>{
