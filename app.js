@@ -126,7 +126,7 @@ app.use('/api/v1',historyTransactionsRoutes)
 app.use('/api/v1',remindersRoutes)
 app.use('/api/v1',transactionAccountRoutes)
 app.use('/api/v1',bankAccountRoutes)
-app.use('/api/v1',bankingTransactionHistoryRoutes)
+app.use('/api/v1',bankingTransactionHistoryRoutes) 
 app.use('/api/v1',supplierRoutes)
 app.use('/api/v1',supplierStatementAccountRoutes)
 

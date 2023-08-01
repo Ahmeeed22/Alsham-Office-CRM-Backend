@@ -270,10 +270,10 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
 
 
     var count = +transactionsInfo?.count;
-    var paymentAmount = +transactionsInfo?.rows[0]?.dataValues?.paymentAmount;
-    var balanceDue = +transactionsInfo?.rows[0]?.dataValues?.balanceDue;
-    var total_profite_gross = +transactionsInfo?.rows[0]?.dataValues?.total_profite_gross;
-    var total_price_without_profite = +transactionsInfo?.rows[0]?.dataValues?.total_price_without_profite;
+    var paymentAmount = +transactionsInfo?.rows[0]?.dataValues?.paymentAmount || 0;
+    var balanceDue = +transactionsInfo?.rows[0]?.dataValues?.balanceDue || 0;
+    var total_profite_gross = +transactionsInfo?.rows[0]?.dataValues?.total_profite_gross || 0;
+    var total_price_without_profite = +transactionsInfo?.rows[0]?.dataValues?.total_price_without_profite ||0;
 
     filterObjAccount.where = { ...filterObj.where, type: 'supply' }
     var transactionAccountSumSupply = await TransactionAccount.findAndCountAll({
@@ -310,8 +310,8 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
             [Sequelize.fn('sum', Sequelize.col('deposite')), 'totalDeposit'],
         ],
     });
-    var pettyCash = +customers[0].transactions[0].paymentAmount;
-    var totalDeposit = +customersdeposit[0].dataValues.totalDeposit;
+    var pettyCash = +customers[0].transactions[0].paymentAmount ||0 ;
+    var totalDeposit = +customersdeposit[0].dataValues.totalDeposit ||0;
     var total_price = +transactionsInfo?.rows[0]?.dataValues?.total_price;
     var currentCash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite;
 
