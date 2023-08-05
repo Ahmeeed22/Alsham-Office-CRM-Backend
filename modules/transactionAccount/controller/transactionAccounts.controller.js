@@ -65,18 +65,13 @@ const addTransactionAccount=catchAsyncError(async (req,res,next)=>{
                 bankAccount = await BankAccount.findOne({
                     where: { id: req.body.accountId },
                 });
-                console.log("68",bankAccount.id);
-                console.log("bankAccount.balance >= (+req.amount)",bankAccount.balance >= (+req.amount));
-                console.log(bankAccount.balance);
-                console.log(req.amount);
+
             if (bankAccount && +bankAccount.balance >= (+req.body.amount)) {
 
                 var transactionAccountBanking = await TransactionAccountBanking.create({ type: "withdraw", amount: req.body.amount, accountId: req.body.accountId });
-
                 const updatedBalance = +bankAccount.balance - (+req.body.amount);
                 const updateBankAccount = await BankAccount.update({ balance: updatedBalance }, { where: { id: bankAccount.id } });
 
-                // res.status(StatusCodes.CREATED).json({ message: "success", result: transaction, historyTransaction: historyTransaction, transactionAccountBanking, updateBankAccount })
                 var transactionAccount = await TransactionAccount.create({...req.body,company_id});
                 res.status(StatusCodes.CREATED).json({message:"success",result:transactionAccount})
 

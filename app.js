@@ -112,7 +112,7 @@ const loggerRoute=new LoggerService('error.route')
 
     Supplier.belongsTo(Company, { foreignKey: 'company_id' });
     Company.hasMany(Supplier, { foreignKey: 'company_id' });
-    
+     
  
 app.use(cookieParser());
 createTable();
