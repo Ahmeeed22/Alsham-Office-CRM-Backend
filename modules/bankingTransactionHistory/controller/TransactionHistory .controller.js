@@ -11,12 +11,11 @@ const getAllTransactionHistory =catchAsyncError(async(req,res,next)=>{
 })
 
 const addTransactionHistory=catchAsyncError(async (req,res,next)=>{
-        var transactionAccountBanking = await TransactionAccountBanking.create(req.body);
-        res.status(StatusCodes.CREATED).json({message:"success",result:transactionAccountBanking})
 
+        const {type, accountId ,amount , DESC}=req.body
 
         const bankAccount = await BankAccount.findOne({
-            where: { accountNumber },
+            where: { id:accountId },
           });
       
           if (!bankAccount) {
@@ -44,6 +43,7 @@ const addTransactionHistory=catchAsyncError(async (req,res,next)=>{
             accountId: bankAccount.id,
             type,
             amount,
+            DESC
           });
       
           res.status(StatusCodes.CREATED).json({ message: `${type} successful.`, balance: updatedBalance });

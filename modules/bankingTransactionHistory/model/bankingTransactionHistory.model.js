@@ -10,7 +10,11 @@ const TransactionAccountBanking  = sequelize.define('TransactionAccountBanking',
       amount: {
         type: Sequelize.FLOAT,
         allowNull: false,
-      }
+      },
+    DESC: {
+      type : Sequelize.STRING,
+      allowNull : true
+    }  
     
   });
   
