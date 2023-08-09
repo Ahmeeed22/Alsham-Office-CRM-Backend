@@ -110,6 +110,7 @@ const getAllTransactions = catchAsyncError(async (req, res, next) => {
 const addTransaction = catchAsyncError(async (req, res, next) => {
     // try{
     if ((req.body.paymentAmount + req.body.balanceDue) === ((req.body.price + req.body.profite) * req.body.quantity)) {
+        console.log("req.loginData  = ",req.loginData);
         if (req.body.accountId) {
             let bankAccount;
                 bankAccount = await BankAccount.findOne({
@@ -122,7 +123,7 @@ const addTransaction = catchAsyncError(async (req, res, next) => {
                 let date = new Date()
                 var historyTransaction = await HistoryTransactions.create({ details: `the fist payment Amount  = ${transaction.dataValues.paymentAmount} at ${date.toLocaleDateString()} ${date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()}`, transaction_id: transaction.dataValues.id, company_id: req.loginData.company_id });
 
-                var transactionAccountBanking = await TransactionAccountBanking.create({ type: "withdraw", amount: req.body.price * req.body.quantity, accountId: req.body.accountId });
+                var transactionAccountBanking = await TransactionAccountBanking.create({ type: "withdraw", amount: req.body.price * req.body.quantity, accountId: req.body.accountId , DESC : ` ${req.body?.sponsoredName}`,empName : `${req.loginData?.name}`});
 
                 const updatedBalance = +bankAccount.balance - (+req.body.price * +req.body.quantity);
                 const updateBankAccount = await BankAccount.update({ balance: updatedBalance }, { where: { id: bankAccount.id } });
@@ -140,7 +141,7 @@ const addTransaction = catchAsyncError(async (req, res, next) => {
                 });
                 if (supplierAccount && supplierAccount.balance >= (req.body.price * req.body.quantity)) {
                     const transaction = await Transaction.create(req.body);
-                    const supplierStatementAccount = await SupplierStatementAccount.create({ type: "debit", amount: req.body.price * req.body.quantity,supplierId:req.body.supplierId, desc: `${req.body.sponsoredName}` });
+                    const supplierStatementAccount = await SupplierStatementAccount.create({ type: "debit", amount: req.body.price * req.body.quantity,supplierId:req.body.supplierId, desc: `${req.body.sponsoredName}` ,empName : `${req.loginData?.name}`});
 
                     const updatedBalance=+supplierAccount.balance - (+req.body.price * +req.body.quantity) ;
                     const updateSupplierAccount = await Supplier.update({ balance: updatedBalance }, { where: { id: supplierAccount.id } });

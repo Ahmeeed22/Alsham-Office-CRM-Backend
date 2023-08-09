@@ -13,7 +13,11 @@ const SupplierStatementAccount  = sequelize.define('SupplierStatementAccount', {
       },
       desc: {
         type :Sequelize.STRING,
-      }
+      },
+      empName: {
+        type : Sequelize.STRING,
+        allowNull : true
+      } 
     
   });
   

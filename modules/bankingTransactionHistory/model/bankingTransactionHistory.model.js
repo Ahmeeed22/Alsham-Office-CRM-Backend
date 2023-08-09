@@ -14,7 +14,11 @@ const TransactionAccountBanking  = sequelize.define('TransactionAccountBanking',
     DESC: {
       type : Sequelize.STRING,
       allowNull : true
-    }  
+    }  ,
+    empName: {
+      type : Sequelize.STRING,
+      allowNull : true
+    } 
     
   });
   

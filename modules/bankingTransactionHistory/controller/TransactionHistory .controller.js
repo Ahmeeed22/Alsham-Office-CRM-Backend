@@ -5,7 +5,9 @@ const TransactionAccountBanking = require("../model/bankingTransactionHistory.mo
 const BankAccount = require("../../banking/model/bank.model");
 
 const getAllTransactionHistory =catchAsyncError(async(req,res,next)=>{
-        var TransactionAccountBankings=await TransactionAccountBanking.findAndCountAll()
+        var TransactionAccountBankings=await TransactionAccountBanking.findAndCountAll({
+          order: [['createdAt', 'DESC']], // Order by the 'createdAt' column in descending order
+        })
         res.status(StatusCodes.OK).json({message:"success",result:TransactionAccountBankings})
 
 })
@@ -44,6 +46,7 @@ const addTransactionHistory=catchAsyncError(async (req,res,next)=>{
             type,
             amount,
             DESC
+            ,empName : `${req.loginData?.name}`
           });
       
           res.status(StatusCodes.CREATED).json({ message: `${type} successful.`, balance: updatedBalance });

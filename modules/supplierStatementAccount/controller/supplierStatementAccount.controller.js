@@ -8,7 +8,9 @@ const TransactionAccountBanking = require("../../bankingTransactionHistory/model
 
 
 const getAllSupplierStatementAccount = catchAsyncError(async (req, res, next) => {
-    var SupplierStatementAccounts = await SupplierStatementAccount.findAndCountAll()
+    var SupplierStatementAccounts = await SupplierStatementAccount.findAndCountAll({
+      order: [['createdAt', 'DESC']], // Order by the 'createdAt' column in descending order
+    })
     res.status(StatusCodes.OK).json({ message: "success", result: SupplierStatementAccounts })
 
 })
@@ -38,7 +40,9 @@ const addSupplierStatementAccount = catchAsyncError(async (req, res, next) => {
                 await TransactionAccountBanking.create({
                     accountId: bankId,
                     type : 'withdraw',
-                    amount,
+                    amount ,
+                    DESC : req.body?.desc
+                    ,empName : `${req.loginData?.name}`
                   });
               }
           }
@@ -47,7 +51,7 @@ const addSupplierStatementAccount = catchAsyncError(async (req, res, next) => {
         await Supplier.update({ balance: updatedBalance }, { where: { id: supplierId } });
 
         // Create the account statement record
-        var supplierStatementAccount = await SupplierStatementAccount.create({ supplierId, type, amount , desc });
+        var supplierStatementAccount = await SupplierStatementAccount.create({ supplierId, type, amount , desc ,empName : `${req.loginData?.name}`});
 
         res.status(StatusCodes.CREATED).json({ message: "success", result: supplierStatementAccount })
         

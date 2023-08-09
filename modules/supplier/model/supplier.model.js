@@ -12,6 +12,15 @@ const Supplier = sequelize.define('Supplier', {
       type: Sequelize.FLOAT,
       defaultValue: 0,
     },
+    grantee : {
+        type:Sequelize.INTEGER,
+        allowNull:true,
+        default:0,
+        validate: {
+            isInt: true,
+            min: 0, // Minimum value of 0
+          },
+    },
   });
   
   module.exports = Supplier;
