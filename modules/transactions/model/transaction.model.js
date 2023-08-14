@@ -42,6 +42,15 @@ const Transaction =sequelize.define('transaction',{
         type: Sequelize.BOOLEAN,
         defaultValue: true,
     },
+    commission: {
+        type : Sequelize.INTEGER,
+        allowNull : true ,
+        defaultValue:0
+    },
+    comIsDone:{
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
+    },
     sponsoredName : {
         type : Sequelize.STRING,
         allowNull:true 

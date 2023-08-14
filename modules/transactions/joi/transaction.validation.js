@@ -15,7 +15,9 @@ module.exports = {
             sponsoredName : Joi.string(),
             active : Joi.boolean().default(true),
             accountId : Joi.number().optional().allow(null),
+            comIsDone :Joi.boolean(),
             visa : Joi.boolean().default(false) ,
+            commission : Joi.number().default(0),
             supplierId : Joi.number().optional().allow(null),
         }) 
     },
@@ -40,6 +42,9 @@ module.exports = {
             service_id : Joi.number(),
             sponsoredName : Joi.string(),
             active : Joi.boolean(),
+            comIsDone :Joi.boolean(),
+            commission : Joi.number().default(0),
+            com: Joi.boolean() ,
         }).min(1)
     },
     getAllTransaction:{
@@ -53,7 +58,7 @@ module.exports = {
             active : Joi.boolean(),
             balanceDue : Joi.number(),
             date :Joi.boolean(),
-            company_id : Joi.number()
+            company_id : Joi.number(),
         }).min(1)
     },
     }

@@ -10,11 +10,8 @@ const { log } = require("winston");
 const logger=new LoggerService('reminder.backup');
 
 const getAllReminders = catchAsyncError(async (req, res, next) => {
-    console.log("test");
-    // const cc=await Reminder.findAll()
-    // logger.info( JSON.stringify(cc))
     const indexInputs = req.body;
-    // console.log(indexInputs);
+    console.log("indexInputs",indexInputs);
     const filterObj = {
         where: {},
         // limit: indexInputs.limit || 10,
@@ -29,8 +26,8 @@ const getAllReminders = catchAsyncError(async (req, res, next) => {
 
     var date2=new Date()
     if (!indexInputs?.dateExpire) {
-        date2.setDate(date2.getDate() + 10);
-        dateExpire.setDate(dateExpire.getDate() + 10);
+        date2.setDate(date2.getDate() + 14);
+        dateExpire.setDate(dateExpire.getDate() + 14);
     }
     filterObj.where["dateExpire"] ={
             [Op.between] : [dateExpire , dateExpire]
@@ -50,7 +47,7 @@ const getAllReminders = catchAsyncError(async (req, res, next) => {
         } else {
             console.log('The two dates are not on the same day.');
         }
-    var oldDate=indexInputs?.endExpire ? new Date(indexInputs?.endExpire) :new Date("2100-12-12 00:00:00");   
+    var oldDate=indexInputs?.endExpire ? new Date(indexInputs?.endExpire) :new Date("2200-12-12 00:00:00");   
     if (indexInputs?.endExpire || indexInputs?.dateExpire || indexInputs?.companyName) {
         var filter={}
 

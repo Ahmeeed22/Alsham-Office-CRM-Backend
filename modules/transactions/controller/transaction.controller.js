@@ -87,6 +87,9 @@ const getAllTransactions = catchAsyncError(async (req, res, next) => {
                 Sequelize.fn('sum', Sequelize.col('paymentAmount')), 'paymentAmount'
             ],
             [
+                Sequelize.fn('sum', Sequelize.col('commission')), 'SumCommission'
+            ],
+            [
                 Sequelize.fn('sum', Sequelize.col('balanceDue')), 'balanceDue'
             ],
             [
@@ -100,8 +103,19 @@ const getAllTransactions = catchAsyncError(async (req, res, next) => {
                 'total_price_without_profite'
             ]
         ],
-    })
-    res.status(StatusCodes.OK).json({ message: "success", result: transactions, allProfite: transactionsInfo })
+    }) ;
+    var transactionsInfoComissionIsPaid = await Transaction.findAndCountAll({
+        where: {...filterObj.where,comIsDone:false}
+        , attributes: [
+            [
+                Sequelize.fn('sum', Sequelize.col('commission')),
+                'sumCommissionUNpaid'
+            ]
+        ]
+    }) ;
+    var sumCommissionUNpaid = +transactionsInfoComissionIsPaid?.rows[0]?.dataValues?.sumCommissionUNpaid || 0;
+
+    res.status(StatusCodes.OK).json({ message: "success", result: transactions, allProfite: transactionsInfo ,sumCommissionUNpaid })
     // } catch (error) {
     //     // res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message : 'error' , error})
     // }
@@ -171,6 +185,12 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
         next(new AppError("this id not valid", 400))
     // res.status(StatusCodes.BAD_REQUEST).json({message:"this id not valid"}) 
     console.log(transaction.dataValues);
+    if(req.body.com){
+        console.log('req.body',req.body , );
+        var transactionUpdated = await Transaction.update(req.body, { where: { id } }) ;
+        res.status(StatusCodes.OK).json({ message: "success" }) ;
+    }
+
     if ((req.body.paymentAmount + req.body.balanceDue) == ((transaction.dataValues.price + transaction.dataValues.profite) * transaction.dataValues.quantity)) {
 
         var transactionUpdated = await Transaction.update(req.body, { where: { id } })
@@ -246,6 +266,9 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
                 Sequelize.fn('sum', Sequelize.col('balanceDue')), 'balanceDue'
             ],
             [
+                Sequelize.fn('sum', Sequelize.col('commission')), 'sumCommission'
+            ],
+            [
                 Sequelize.fn(
                     'SUM',
                     Sequelize.where(Sequelize.col('profite'), '*', Sequelize.col('quantity'))
@@ -267,6 +290,15 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
                 'total_price_without_profite'
             ]
         ],
+    }) ;
+    var transactionsInfoComissionIsPaid = await Transaction.findAndCountAll({
+        where: {...filterObj.where,comIsDone:false}
+        , attributes: [
+            [
+                Sequelize.fn('sum', Sequelize.col('commission')),
+                'sumCommissionUNpaid'
+            ]
+        ]
     })
 
 
@@ -275,6 +307,8 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     var balanceDue = +transactionsInfo?.rows[0]?.dataValues?.balanceDue || 0;
     var total_profite_gross = +transactionsInfo?.rows[0]?.dataValues?.total_profite_gross || 0;
     var total_price_without_profite = +transactionsInfo?.rows[0]?.dataValues?.total_price_without_profite ||0;
+    var commission = +transactionsInfo?.rows[0]?.dataValues?.sumCommission || 0;
+    var sumCommissionUNpaid = +transactionsInfoComissionIsPaid?.rows[0]?.dataValues?.sumCommissionUNpaid || 0;
 
     filterObjAccount.where = { ...filterObj.where, type: 'supply' }
     var transactionAccountSumSupply = await TransactionAccount.findAndCountAll({
@@ -315,8 +349,9 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     var totalDeposit = +customersdeposit[0].dataValues.totalDeposit ||0;
     var total_price = +transactionsInfo?.rows[0]?.dataValues?.total_price;
     var currentCash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite;
+    // var cash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite -banks -suppliers ;
 
-    res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash, total_profite_gross, balanceDue, paymentAmount, count, sumSupply, transactionAccountSumExpenses, total_price, pettyCash, totalDeposit, total_price_without_profite } })
+    res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash, total_profite_gross, balanceDue, paymentAmount, count, sumSupply, transactionAccountSumExpenses, total_price, pettyCash, totalDeposit, total_price_without_profite,commission ,sumCommissionUNpaid } })
 });
 
 module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary }
