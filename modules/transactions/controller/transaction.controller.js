@@ -246,6 +246,8 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     var startedDate = indexInputs.startedDate ? new Date(indexInputs.startedDate) : new Date("2020-12-12 00:00:00");
     let date = new Date(indexInputs.endDate)
     var endDate = indexInputs.endDate ? date.setHours(date.getHours() + 24) : new Date();
+    console.log('startedDate',startedDate)
+    console.log('endDate',endDate)
     if (indexInputs.startedDate || indexInputs.endDate) {
         filterObj.where["createdAt"] = {
             [Op.between]: [startedDate, endDate]
@@ -299,7 +301,28 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
                 'sumCommissionUNpaid'
             ]
         ]
+    }) ;
+
+    var suppliers=await Supplier.findAndCountAll({
+            where :{company_id:req?.loginData.company_id} 
+            , attributes : [
+                [
+                    Sequelize.fn('sum' , Sequelize.col('balance')),
+                    'sumBalanceSupplier'
+                ]
+            ]
+    }) ;
+
+    var banks=await BankAccount.findAndCountAll({
+        where :{company_id:req?.loginData.company_id} 
+        , attributes : [
+            [
+                Sequelize.fn('sum' , Sequelize.col('balance')),
+                'sumBalanceBanks'
+            ]
+        ]
     })
+        
 
 
     var count = +transactionsInfo?.count;
@@ -309,6 +332,9 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     var total_price_without_profite = +transactionsInfo?.rows[0]?.dataValues?.total_price_without_profite ||0;
     var commission = +transactionsInfo?.rows[0]?.dataValues?.sumCommission || 0;
     var sumCommissionUNpaid = +transactionsInfoComissionIsPaid?.rows[0]?.dataValues?.sumCommissionUNpaid || 0;
+    var supplierBalance = +suppliers?.rows[0]?.dataValues?.sumBalanceSupplier || 0;
+    var banksBalance = +banks?.rows[0]?.dataValues?.sumBalanceBanks || 0;
+
 
     filterObjAccount.where = { ...filterObj.where, type: 'supply' }
     var transactionAccountSumSupply = await TransactionAccount.findAndCountAll({
@@ -348,10 +374,10 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     var pettyCash = +customers[0].transactions[0].paymentAmount ||0 ;
     var totalDeposit = +customersdeposit[0].dataValues.totalDeposit ||0;
     var total_price = +transactionsInfo?.rows[0]?.dataValues?.total_price;
-    var currentCash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite;
+    var currentCash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite - supplierBalance -banksBalance -170;
     // var cash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite -banks -suppliers ;
 
-    res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash, total_profite_gross, balanceDue, paymentAmount, count, sumSupply, transactionAccountSumExpenses, total_price, pettyCash, totalDeposit, total_price_without_profite,commission ,sumCommissionUNpaid } })
+    res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash, total_profite_gross, balanceDue, paymentAmount, count, sumSupply, transactionAccountSumExpenses, total_price, pettyCash, totalDeposit, total_price_without_profite,commission ,sumCommissionUNpaid ,supplierBalance , banksBalance } })
 });
 
 module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary }

@@ -1,7 +1,7 @@
 const sequelize = require("../configrations/sequelize");
 const createTable=()=>{
     sequelize.sync(
-        {alter: true}      
+        // {alter: true}      
         ).then((result)=>{
         console.log("connection success");
     }).catch((err)=>{

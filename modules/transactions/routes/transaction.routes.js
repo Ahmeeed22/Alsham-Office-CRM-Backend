@@ -9,6 +9,6 @@ transactionsRoutes.post('/addTransaction',isAuth('ALL'),validationRequest(addTra
 transactionsRoutes.put('/updateTransaction/:id',isAuth('ALL'),validationRequest(updateTransactionSchema),updateTransaction)
 transactionsRoutes.patch('/deleteTransactionSoft/:id',isAuth('ALL'),deleteTransaction)
 // transactionsRoutes.get('/searchTransaction',searchTransactions)
-transactionsRoutes.post('/getTransactionsSummary',getTransactionsSummary)
+transactionsRoutes.post('/getTransactionsSummary',isAuth('ALL'),getTransactionsSummary)
 
 module.exports=transactionsRoutes;
