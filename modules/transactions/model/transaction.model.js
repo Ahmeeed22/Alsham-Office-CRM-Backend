@@ -7,29 +7,29 @@ const User = require("../../users/model/user.model");
 
 const Transaction =sequelize.define('transaction',{
     id:{
-        type:Sequelize.INTEGER,
+        type:Sequelize.FLOAT,
         autoIncrement: true,
         primaryKey: true
     },
     paymentAmount:{
-        type:Sequelize.INTEGER,
+        type:Sequelize.FLOAT,
         allowNull: false ,
         defaultValue:0
     },
     balanceDue:{
-        type:Sequelize.INTEGER,
+        type:Sequelize.FLOAT,
         allowNull: false ,
         defaultValue:0
     },
     price:{
-        type:Sequelize.INTEGER
+        type:Sequelize.FLOAT
     },
     profite:{
-        type :Sequelize.INTEGER,
+        type :Sequelize.FLOAT,
         allowNull:false
     },
     quantity:{
-        type : Sequelize.INTEGER,
+        type : Sequelize.FLOAT,
         defaultValue:1
     },
     totalPrice: {
@@ -43,7 +43,7 @@ const Transaction =sequelize.define('transaction',{
         defaultValue: true,
     },
     commission: {
-        type : Sequelize.INTEGER,
+        type : Sequelize.FLOAT,
         allowNull : true ,
         defaultValue:0
     },
