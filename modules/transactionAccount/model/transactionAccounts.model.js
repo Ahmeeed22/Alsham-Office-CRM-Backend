@@ -17,12 +17,8 @@ const TransactionAccount =sequelize.define('transactionAccount',{
         allowNull:true
     },
     amount : {
-        type:Sequelize.INTEGER,
-        allowNull:false,
-        validate: {
-            isInt: true,
-            min: 0, // Minimum value of 0
-          },
+        type:Sequelize.FLOAT, 
+        allowNull:false
     },
     active:{
         type: Sequelize.BOOLEAN,
