@@ -87,7 +87,11 @@ const getAllTransactions = catchAsyncError(async (req, res, next) => {
                 Sequelize.fn('sum', Sequelize.col('paymentAmount')), 'paymentAmount'
             ],
             [
-                Sequelize.fn('sum', Sequelize.col('commission')), 'SumCommission'
+                Sequelize.fn(
+                    'sum', 
+                        Sequelize.where(Sequelize.col('commission') , '*', Sequelize.col('quantity')) 
+                        )
+                        , 'SumCommission'  
             ],
             [
                 Sequelize.fn('sum', Sequelize.col('balanceDue')), 'balanceDue'
@@ -104,17 +108,19 @@ const getAllTransactions = catchAsyncError(async (req, res, next) => {
             ]
         ],
     }) ;
-    var transactionsInfoComissionIsPaid = await Transaction.findAndCountAll({
+    var transactionsInfoComissionIsNotPaid = await Transaction.findAndCountAll({
         where: {...filterObj.where,comIsDone:false}
         , attributes: [
             [
-                Sequelize.fn('sum', Sequelize.col('commission')),
-                'sumCommissionUNpaid'
+                Sequelize.fn('sum',
+                Sequelize.where(Sequelize.col('commission') , '*', Sequelize.col('quantity')) 
+                        )
+                        , 'sumCommissionUNpaid'  
             ]
         ]
     }) ;
-    var sumCommissionUNpaid = +transactionsInfoComissionIsPaid?.rows[0]?.dataValues?.sumCommissionUNpaid || 0;
-
+    var sumCommissionUNpaid = +transactionsInfoComissionIsNotPaid?.rows[0]?.dataValues?.sumCommissionUNpaid || 0;
+    console.log("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr");
     res.status(StatusCodes.OK).json({ message: "success", result: transactions, allProfite: transactionsInfo ,sumCommissionUNpaid })
     // } catch (error) {
     //     // res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message : 'error' , error})
@@ -132,7 +138,7 @@ const addTransaction = catchAsyncError(async (req, res, next) => {
                 });
             if (bankAccount && bankAccount.balance >= (req.body.price * req.body.quantity)) {
 
-                var transaction = await Transaction.create(req.body);
+                var transaction = await Transaction.create({...req.body,sponsoredName:`${req.body.sponsoredName} , By bank:- ${bankAccount.name}`});
                 // add history transaction
                 let date = new Date()
                 var historyTransaction = await HistoryTransactions.create({ details: `the fist payment Amount  = ${transaction.dataValues.paymentAmount} at ${date.toLocaleDateString()} ${date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()}`, transaction_id: transaction.dataValues.id, company_id: req.loginData.company_id });
@@ -268,7 +274,11 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
                 Sequelize.fn('sum', Sequelize.col('balanceDue')), 'balanceDue'
             ],
             [
-                Sequelize.fn('sum', Sequelize.col('commission')), 'sumCommission'
+                Sequelize.fn(
+                    'sum', 
+                    Sequelize.where(Sequelize.col('commission') , '*', Sequelize.col('quantity')) 
+                    )
+                    , 'sumCommission'
             ],
             [
                 Sequelize.fn(
@@ -294,11 +304,14 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
         ],
     }) ;
     var transactionsInfoComissionIsPaid = await Transaction.findAndCountAll({
-        where: {...filterObj.where,comIsDone:false}
+        where: {...filterObj.where,comIsDone:true}
         , attributes: [
             [
-                Sequelize.fn('sum', Sequelize.col('commission')),
-                'sumCommissionUNpaid'
+                Sequelize.fn(
+                    'sum', 
+                        Sequelize.where(Sequelize.col('commission') , '*', Sequelize.col('quantity')) 
+                        )
+                        , 'sumCommissionPaid'  
             ]
         ]
     }) ;
@@ -331,7 +344,7 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     var total_profite_gross = +transactionsInfo?.rows[0]?.dataValues?.total_profite_gross || 0;
     var total_price_without_profite = +transactionsInfo?.rows[0]?.dataValues?.total_price_without_profite ||0;
     var commission = +transactionsInfo?.rows[0]?.dataValues?.sumCommission || 0;
-    var sumCommissionUNpaid = +transactionsInfoComissionIsPaid?.rows[0]?.dataValues?.sumCommissionUNpaid || 0;
+    var sumCommissionpaid = +transactionsInfoComissionIsPaid?.rows[0]?.dataValues?.sumCommissionPaid || 0;
     var supplierBalance = +suppliers?.rows[0]?.dataValues?.sumBalanceSupplier || 0;
     var banksBalance = +banks?.rows[0]?.dataValues?.sumBalanceBanks || 0;
 
@@ -377,7 +390,7 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     var currentCash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite - supplierBalance -banksBalance -170;
     // var cash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite -banks -suppliers ;
 
-    res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash, total_profite_gross, balanceDue, paymentAmount, count, sumSupply, transactionAccountSumExpenses, total_price, pettyCash, totalDeposit, total_price_without_profite,commission ,sumCommissionUNpaid ,supplierBalance , banksBalance } })
+    res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash, total_profite_gross, balanceDue, paymentAmount, count, sumSupply, transactionAccountSumExpenses, total_price, pettyCash, totalDeposit, total_price_without_profite,commission ,sumCommissionPaid:sumCommissionpaid ,supplierBalance , banksBalance } })
 });
 
 module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary }
