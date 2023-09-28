@@ -36,6 +36,7 @@ const bankingTransactionHistoryRoutes = require("./modules/bankingTransactionHis
 const bankAccountRoutes = require("./modules/banking/routes/bank.route");
 const SupplierStatementAccount = require("./modules/supplierStatementAccount/model/supplierStatementAccount.model");
 const Supplier = require("./modules/supplier/model/supplier.model");
+const Owners = require("./modules/owners/model/owners.model");
 
 const app =express();
 app.use(cors())
@@ -151,12 +152,13 @@ app.use((error , req ,res , next)=>{
         .json({status:error.statusCode,message:error.message,error})
     }
 })
+// Owners
 app.listen(process.env.PORT||3000, () => {   
     console.log(`Server started on port ${port}`);
 });
 // handle outside express
 process.on('unhandledRejection',err=>{
-    console.log('unhandledRejection',err);
+    console.log('unhandledRejection',err); 
 })      
   
 
