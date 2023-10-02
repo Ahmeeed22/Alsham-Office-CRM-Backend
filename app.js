@@ -102,6 +102,14 @@ const loggerRoute=new LoggerService('error.route')
         foreignKey: 'company_id',
     }); 
 
+    Company.hasMany(Owners, {
+        foreignKey :'company_id'
+    })
+
+    Owners.belongsTo(Company ,{
+        foreignKey :'company_id'
+    })
+
     TransactionAccountBanking.belongsTo(BankAccount, { foreignKey: 'accountId' });
     BankAccount.hasMany(TransactionAccountBanking, { foreignKey: 'accountId' });
 
