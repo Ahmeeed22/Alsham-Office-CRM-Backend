@@ -38,6 +38,7 @@ const SupplierStatementAccount = require("./modules/supplierStatementAccount/mod
 const Supplier = require("./modules/supplier/model/supplier.model");
 const Owners = require("./modules/owners/model/owners.model");
 const ownersRoutes = require("./modules/owners/routes/owners.route");
+const DepositHistory = require("./modules/depositHistory/model/depositHistory.model");
 
 const app =express();
 app.use(cors())
@@ -122,11 +123,18 @@ const loggerRoute=new LoggerService('error.route')
 
     Supplier.belongsTo(Company, { foreignKey: 'company_id' });
     Company.hasMany(Supplier, { foreignKey: 'company_id' });
+
+    // Transaction.belongsTo(DepositHistory, { foreignKey: 'transactionId' });
+    // DepositHistory.hasMany(Transaction, { foreignKey: 'transactionId' });
+    DepositHistory.belongsTo(Customer, { foreignKey: 'customerId' });
+    Customer.hasMany(DepositHistory, { foreignKey: 'customerId' });
+
+
      
  
 app.use(cookieParser());
 createTable();
-const port=process.env.PORT ;
+const port=process.env.PORT ; 
 app.use('/api/v1',userRoutes);   
 app.use('/api/v1',customersRoutes);
 app.use('/api/v1',servicesRoutes);

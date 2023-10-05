@@ -17,6 +17,10 @@ const Company =sequelize.define('company',{
     active:{
         type: Sequelize.BOOLEAN,
         defaultValue: true,
+    },
+    pettyCash:{
+        type :Sequelize.FLOAT ,
+        defaultValue: 0
     }
 });
 

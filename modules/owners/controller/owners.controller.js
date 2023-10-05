@@ -4,6 +4,7 @@ const BankAccount = require("../../banking/model/bank.model");
 const TransactionAccountBanking = require("../../bankingTransactionHistory/model/bankingTransactionHistory.model");
 const Owners = require("../model/owners.model");
 const { StatusCodes } = require("http-status-codes");
+const Company = require("../../companies/model/company.model");
 
 const createOwners =catchAsyncError(async (req, res) => {
     const company_id=req.loginData?.company_id ||1
@@ -19,9 +20,8 @@ const createOwners =catchAsyncError(async (req, res) => {
                 var transactionAccountBanking = await TransactionAccountBanking.create({ type: "withdraw",DESC:req.body.desc, amount: req.body.amount, accountId: req.body.accountId , empName : `${req.loginData?.name}`});
                 const updatedBalance = +bankAccount.balance - (+req.body.amount);
                 const updateBankAccount = await BankAccount.update({ balance: updatedBalance }, { where: { id: bankAccount.id } });
-                console.log("before ",);
                 var ownersAcc = await Owners.create({ ...req.body, company_id });
-                console.log("after", ownersAcc);
+                // var company =await Company.update({pettyCash},{where:{id:company_id}})
                 res.status(StatusCodes.CREATED).json({ message: "success", result: ownersAcc })
             } else {
                 res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid bank account or Insufficient balance." })
@@ -76,7 +76,7 @@ const getAllOwners = catchAsyncError(async (req, res, next) => {
     };
 
     var ownersTransactions = await Owners.findAndCountAll({ ...filterObj });
-    var ownersTransactionSum = await Owners.findAll({
+    var ownersTransactionSum = await Owners.findAll({  
         ...filterObj,
         attributes: [
             [Sequelize.fn('sum', Sequelize.col('amount')), 'totalAmount']
