@@ -20,7 +20,7 @@ const Customer =sequelize.define('customer',{
         type:Sequelize.INTEGER ,
     },
     deposite:{
-        type:Sequelize.INTEGER ,
+        type:Sequelize.FLOAT ,
         defaultValue:0 
     },
     active:{
