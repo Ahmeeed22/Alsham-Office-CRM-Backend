@@ -5,6 +5,7 @@ const AppError = require("../../../helpers/AppError");
 const { catchAsyncError } = require("../../../helpers/catchSync");
 const { Op, Sequelize } = require("sequelize");
 const Transaction = require("../../transactions/model/transaction.model");
+const DepositHistory = require("../../depositHistory/model/depositHistory.model");
 
 const getAllCustomers = catchAsyncError(async (req, res, next) => {
     // try{
@@ -30,7 +31,12 @@ const addCustomer = catchAsyncError(async (req, res, next) => {
         res.status(StatusCodes.BAD_REQUEST).json({ message: "name is exit" })
     } else {
         var customercreated = await Customer.create(req.body);
-        res.status(StatusCodes.CREATED).json({ message: "success", result: customercreated })
+        let depositeHistory
+        if (req.body.deposite && req.body.deposite > 0) {
+             depositeHistory=await DepositHistory.create({type:'deposit' , details : `first Deposit when customer created ` ,customerId :customercreated.id , amount:req.body.deposite})
+        }
+
+        res.status(StatusCodes.CREATED).json({ message: "success", result: customercreated ,depositeHistory})
     }
     // } catch (error) {
     //    next(new AppError('error server ',500,error))
@@ -54,8 +60,14 @@ const updateCustomer = catchAsyncError(async (req, res, next) => {
             updateData={...req.body}
         }
 
-    var customer = await Customer.update(updateData, { where: { id } })
-    res.status(StatusCodes.OK).json({ message: "success", result: customer })
+    var customer = await Customer.update(updateData, { where: { id } }) ;
+    let depositeHistory ;
+   
+    if (req.body.deposite && req.body.deposite > 0) {
+        depositeHistory=await DepositHistory.create({type: req.body.deposite>x.dataValues.deposite? 'deposit':'withdraw' , details : `update Deposit ` ,customerId :id , amount:+req.body.deposite -  +x.dataValues.deposite })
+   }
+
+    res.status(StatusCodes.OK).json({ message: "success", result: customer ,depositeHistory })
     // } catch (error) {
     //    next(new AppError('error server ',500))
     // res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message : 'error' , error})
@@ -113,7 +125,11 @@ const searchCustomers = catchAsyncError(async (req, res, next) => {
     }
 
     if (filterObj.where.name || filterObj.where.active == 0 || filterObj.where.active == 1) {
-        let customers = await Customer.findAll({ ...filterObj   ,include:[ {model:Transaction,attributes: ['paymentAmount', "id"]}],});
+        let customers = await Customer.findAll({ ...filterObj   ,include:[
+             {model:Transaction,attributes: ['paymentAmount','balanceDue', "id"]},
+             { model: DepositHistory}
+            
+            ],});
         res.status(StatusCodes.OK).json({ message: "success", result: customers })
     } else {
         let customers = await Customer.findAll({
@@ -122,7 +138,11 @@ const searchCustomers = catchAsyncError(async (req, res, next) => {
               },
             order: [
                 ['createdAt', 'DESC']
-            ]
+            ],include:[
+                {model:Transaction,attributes: ['paymentAmount','balanceDue', "id"]},
+                { model: DepositHistory}
+               
+               ]
         });
         res.status(StatusCodes.OK).json({ message: "success", result: customers })
     }

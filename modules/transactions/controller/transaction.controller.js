@@ -159,7 +159,7 @@ const addTransaction = catchAsyncError(async (req, res, next) => {
                 supplierAccount = await Supplier.findOne({
                     where: { id: req.body.supplierId },
                 });
-                if (supplierAccount && supplierAccount.balance >= (req.body.price * req.body.quantity)) {
+                // if (supplierAccount && supplierAccount.balance >= (req.body.price * req.body.quantity)) {  
                     const transaction = await Transaction.create(req.body);
                     const supplierStatementAccount = await SupplierStatementAccount.create({ type: "debit", amount: req.body.price * req.body.quantity,supplierId:req.body.supplierId, desc: `${req.body.sponsoredName}` ,empName : `${req.loginData?.name}`});
 
@@ -168,9 +168,9 @@ const addTransaction = catchAsyncError(async (req, res, next) => {
 
                     res.status(StatusCodes.CREATED).json({ message: "success", result: transaction, supplierStatementAccount, updateSupplierAccount })
 
-                }else{
-                    res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid supplier account or Insufficient balance." }) ;      
-                }    
+                // }else{
+                //     res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid supplier account or Insufficient balance." }) ;      
+                // }    
         }
 
 

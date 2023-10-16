@@ -39,6 +39,7 @@ const Supplier = require("./modules/supplier/model/supplier.model");
 const Owners = require("./modules/owners/model/owners.model");
 const ownersRoutes = require("./modules/owners/routes/owners.route");
 const DepositHistory = require("./modules/depositHistory/model/depositHistory.model");
+const historyDipostRoutes = require("./modules/depositHistory/routes/dipositHistory.controller");
 
 const app =express();
 app.use(cors())
@@ -148,6 +149,7 @@ app.use('/api/v1',bankingTransactionHistoryRoutes)
 app.use('/api/v1',supplierRoutes)
 app.use('/api/v1',supplierStatementAccountRoutes);
 app.use('/api/v1',ownersRoutes);
+app.use('/api/v1',historyDipostRoutes)
 
 
 // handle wronge routes 
