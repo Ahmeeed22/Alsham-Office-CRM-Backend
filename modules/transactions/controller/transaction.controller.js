@@ -36,6 +36,11 @@ const getAllTransactions = catchAsyncError(async (req, res, next) => {
     if (indexInputs.customer_id != undefined) {
         filterObj.where.customer_id = indexInputs.customer_id
     }
+    if (indexInputs.sponsoredName) {
+        filterObj.where["sponsoredName"] = {
+            [Op.like]: `%${indexInputs.sponsoredName}%`
+        }
+    }
     if (indexInputs.admin_id != undefined) {
         filterObj.where.admin_id = indexInputs.admin_id
     }

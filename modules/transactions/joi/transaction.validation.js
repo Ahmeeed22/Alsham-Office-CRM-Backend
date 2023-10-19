@@ -59,6 +59,7 @@ module.exports = {
             balanceDue : Joi.number(),
             date :Joi.boolean(),
             company_id : Joi.number(),
+            sponsoredName :Joi.string()
         }).min(1)
     },
     }

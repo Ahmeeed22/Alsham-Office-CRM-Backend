@@ -78,15 +78,19 @@ const getAllOwners = catchAsyncError(async (req, res, next) => {
     var ownersTransactions = await Owners.findAndCountAll({ ...filterObj });
     var ownersTransactionSum = await Owners.findAll({  
         ...filterObj,
+       
         attributes: [
-            [Sequelize.fn('sum', Sequelize.col('amount')), 'totalAmount']
+            [Sequelize.fn('sum',  Sequelize.literal("CASE WHEN type = 'invest' THEN amount ELSE 0 END")), 'investTotalAmount'] ,
+            [Sequelize.fn('sum',  Sequelize.literal("CASE WHEN type = 'drowing' THEN amount ELSE 0 END")), 'drowingTotalAmount'] ,
+
         ]
     });
 
     // Extract the sum from the result
-    const sum = ownersTransactionSum[0]?.dataValues?.totalAmount || 0;
+    const investTotalAmount = ownersTransactionSum[0]?.dataValues?.investTotalAmount || 0;
+    const drowingTotalAmount = ownersTransactionSum[0]?.dataValues?.drowingTotalAmount || 0;
 
-    res.status(StatusCodes.OK).json({ message: "success", result: { ownersTransactions, sum } });
+    res.status(StatusCodes.OK).json({ message: "success", result: { ownersTransactions, investTotalAmount ,drowingTotalAmount } });
 });
 
 

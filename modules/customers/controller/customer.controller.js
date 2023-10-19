@@ -6,6 +6,7 @@ const { catchAsyncError } = require("../../../helpers/catchSync");
 const { Op, Sequelize } = require("sequelize");
 const Transaction = require("../../transactions/model/transaction.model");
 const DepositHistory = require("../../depositHistory/model/depositHistory.model");
+const { log } = require("console");
 
 const getAllCustomers = catchAsyncError(async (req, res, next) => {
     // try{
@@ -62,8 +63,9 @@ const updateCustomer = catchAsyncError(async (req, res, next) => {
 
     var customer = await Customer.update(updateData, { where: { id } }) ;
     let depositeHistory ;
-   
-    if (req.body.deposite && req.body.deposite > 0) {
+   let transactionEndPoint= req.body.transactionEndPoint ? true :false ;
+    if (req.body.deposite && req.body.deposite > 0 && !transactionEndPoint) {
+        log("tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt")
         depositeHistory=await DepositHistory.create({type: req.body.deposite>x.dataValues.deposite? 'deposit':'withdraw' , details : `update Deposit ` ,customerId :id , amount:+req.body.deposite -  +x.dataValues.deposite })
    }
 
