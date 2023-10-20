@@ -14,7 +14,6 @@ const getAllCustomers = catchAsyncError(async (req, res, next) => {
         where: { company_id: req.loginData.company_id, active: true }
         , order: [
             ['createdAt', 'DESC'],
-            ['name', 'ASC'],
         ], include: User
     })
     res.status(StatusCodes.OK).json({ message: "success", result: customers })
@@ -34,7 +33,7 @@ const addCustomer = catchAsyncError(async (req, res, next) => {
         var customercreated = await Customer.create(req.body);
         let depositeHistory
         if (req.body.deposite && req.body.deposite > 0) {
-             depositeHistory=await DepositHistory.create({type:'deposit' , details : `first Deposit when customer created ` ,customerId :customercreated.id , amount:req.body.deposite})
+             depositeHistory=await DepositHistory.create({type:'deposit' , details : `first Deposit when customer created ` ,customerId :customercreated.id , amount:req.body.deposite , deposite :req.body.deposite })
         }
 
         res.status(StatusCodes.CREATED).json({ message: "success", result: customercreated ,depositeHistory})
@@ -66,7 +65,7 @@ const updateCustomer = catchAsyncError(async (req, res, next) => {
    let transactionEndPoint= req.body.transactionEndPoint ? true :false ;
     if (req.body.deposite && req.body.deposite > 0 && !transactionEndPoint) {
         log("tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt")
-        depositeHistory=await DepositHistory.create({type: req.body.deposite>x.dataValues.deposite? 'deposit':'withdraw' , details : `update Deposit ` ,customerId :id , amount:+req.body.deposite -  +x.dataValues.deposite })
+        depositeHistory=await DepositHistory.create({type: req.body.deposite>x.dataValues.deposite? 'deposit':'withdraw' , details : `update Deposit ` ,customerId :id , amount:+req.body.deposite -  +x.dataValues.deposite , deposite :req.body.deposite})
    }
 
     res.status(StatusCodes.OK).json({ message: "success", result: customer ,depositeHistory })
@@ -129,7 +128,7 @@ const searchCustomers = catchAsyncError(async (req, res, next) => {
     if (filterObj.where.name || filterObj.where.active == 0 || filterObj.where.active == 1) {
         let customers = await Customer.findAll({ ...filterObj   ,include:[
              {model:Transaction,attributes: ['paymentAmount','balanceDue', "id"]},
-             { model: DepositHistory}
+             { model: DepositHistory ,order: [['createdAt', 'DESC']]}
             
             ],});
         res.status(StatusCodes.OK).json({ message: "success", result: customers })
@@ -142,7 +141,7 @@ const searchCustomers = catchAsyncError(async (req, res, next) => {
                 ['createdAt', 'DESC']
             ],include:[
                 {model:Transaction,attributes: ['paymentAmount','balanceDue', "id"]},
-                { model: DepositHistory}
+                { model: DepositHistory ,order: [['createdAt', 'DESC']] }
                
                ]
         });
