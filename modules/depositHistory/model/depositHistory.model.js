@@ -19,6 +19,9 @@ const DepositHistory = sequelize.define('depositHistory', {
     details:{
         type:Sequelize.STRING,
         allowNull: false 
+    },
+    deposite : {
+      type :Sequelize.FLOAT
     }
 });
 
