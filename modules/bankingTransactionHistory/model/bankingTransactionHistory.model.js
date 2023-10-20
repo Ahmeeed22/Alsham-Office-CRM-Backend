@@ -18,7 +18,10 @@ const TransactionAccountBanking  = sequelize.define('TransactionAccountBanking',
     empName: {
       type : Sequelize.STRING,
       allowNull : true
-    } 
+    } ,
+    deposite : {
+      type :Sequelize.FLOAT
+    }
     
   });
   
