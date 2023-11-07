@@ -121,4 +121,18 @@ const searchTransactionAccount=catchAsyncError(async(req,res,next)=>{
             }
 })
 
-module.exports={getAllTransactionAccount , addTransactionAccount , deleteTransactionAccount ,searchTransactionAccount , updateTransactionAccount}
+const getExpensesSum = async (req, res) => {
+    try {
+      const expensesSum = await TransactionAccount.sum('amount', {
+        where: { type: 'expenses', 'company_id' : req.loginData?.company_id 
+     },
+      });
+  
+      res.json({ expensesSum });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  };
+
+module.exports={getAllTransactionAccount , addTransactionAccount , deleteTransactionAccount ,searchTransactionAccount , updateTransactionAccount ,getExpensesSum}

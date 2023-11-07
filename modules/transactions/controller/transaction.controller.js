@@ -240,6 +240,7 @@ const deleteTransaction = catchAsyncError(async (req, res, next) => {
 
 const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     const indexInputs = req.body;
+    console.log("hooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooome " , req.body);
     const filterObj = {
         where: {},
         limit: indexInputs.limit || 10,
@@ -355,6 +356,7 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
 
 
     filterObjAccount.where = { ...filterObj.where, type: 'supply' }
+    console.log("exxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxpppppenses ",filterObj);
     var transactionAccountSumSupply = await TransactionAccount.findAndCountAll({
         ...filterObjAccount, attributes: [
 
@@ -389,13 +391,77 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
             [Sequelize.fn('sum', Sequelize.col('deposite')), 'totalDeposit'],
         ],
     });
-    var pettyCash = +customers[0].transactions[0].paymentAmount ||0 ;
+    var pettyCash = +customers[0].transactions[0]?.paymentAmount ||0 ;
     var totalDeposit = +customersdeposit[0].dataValues.totalDeposit ||0;
     var total_price = +transactionsInfo?.rows[0]?.dataValues?.total_price;
-    var currentCash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite - supplierBalance -banksBalance -170;
+    var currentCash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite - supplierBalance -banksBalance ; 
     // var cash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite -banks -suppliers ;
 
     res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash, total_profite_gross, balanceDue, paymentAmount, count, sumSupply, transactionAccountSumExpenses, total_price, pettyCash, totalDeposit, total_price_without_profite,commission ,sumCommissionPaid:sumCommissionpaid ,supplierBalance , banksBalance } })
 });
 
-module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary }
+const getAllSumBalanceCustomers = catchAsyncError(async (req, res, next) => {
+
+    const sumbalanceDue = await Transaction.sum("balanceDue", {
+        where: {
+          active: true, // You can add any conditions you need here
+          company_id:req.loginData.company_id
+        },
+      });
+
+      const sumCommission = await Transaction.sum("commission", {
+        where: {
+          active: true, // You can add any conditions you need here
+          company_id:req.loginData.company_id
+        },
+      });
+
+    //   filterObjAccount.where = { ...filterObj.where, type: 'expenses' }
+      // console.log("filterObjAccount",filterObjAccount);
+      var transactionAccountSumExpenses = await TransactionAccount.findAndCountAll({
+        where:  {
+            active: true, // You can add any conditions you need here
+           company_id:req.loginData.company_id ,
+           type: 'expenses' 
+          },
+           attributes: [
+  
+              [
+                  Sequelize.fn('sum', Sequelize.col('amount')), 'sumExpenses'
+              ]
+          ],
+      })
+      var sumExpenses = +transactionAccountSumExpenses?.rows[0]?.dataValues?.sumExpenses || 0;
+
+      const totalProfit = await Transaction.findAndCountAll({
+        where:  {
+            active: true, // You can add any conditions you need here
+           company_id:req.loginData.company_id
+          }, attributes: [
+            [
+                Sequelize.fn(
+                    'SUM',
+                    Sequelize.where(Sequelize.col('profite'), '*', Sequelize.col('quantity'))
+                ),
+                'total_profite_gross',
+            ],
+            [
+                Sequelize.fn(
+                    'SUM',
+                    Sequelize.where(Sequelize.col('price'), '*', Sequelize.col('quantity'))
+                ),
+                'total_price_without_profite'
+            ],
+            [
+                Sequelize.fn('sum', Sequelize.col('paymentAmount')), 'paymentAmount'
+            ]
+        ],
+    }) ;
+  
+
+    res.status(StatusCodes.OK).json({ message: "success", result: {sumExpenses,sumBalanceCustomers:sumbalanceDue , sumCommission , totalProfit:+totalProfit?.rows[0]?.dataValues?.total_profite_gross || 0 , totalPayment : totalProfit?.rows[0]?.dataValues?.paymentAmount || 0 ,
+        total_price_without_profite :totalProfit?.rows[0]?.dataValues?.total_price_without_profite || 0 } })
+
+})
+
+module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary ,getAllSumBalanceCustomers ,}

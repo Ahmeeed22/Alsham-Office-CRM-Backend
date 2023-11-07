@@ -93,5 +93,25 @@ const getAllOwners = catchAsyncError(async (req, res, next) => {
     res.status(StatusCodes.OK).json({ message: "success", result: { ownersTransactions, investTotalAmount ,drowingTotalAmount } });
 });
 
+const getCapitalAndOwnerDrawing=catchAsyncError(async (req, res, next) => {
+    const drowingSum = await Owners.sum("amount", {
+        where: {
+          type: "drowing",
+          active: true, // You can add any additional conditions here
+          company_id:req.loginData.company_id
+        },
+      });
+  
+      const investSum = await Owners.sum("amount", {
+        where: {
+          type: "invest",
+          active: true, // You can add any additional conditions here
+          company_id:req.loginData.company_id
+        },
+      });
 
-module.exports ={createOwners ,getAllOwners}  ;
+    res.status(StatusCodes.OK).json({ message: "success", result: { drowingSum,investSum } });
+});
+
+
+module.exports ={createOwners ,getAllOwners , getCapitalAndOwnerDrawing}  ;

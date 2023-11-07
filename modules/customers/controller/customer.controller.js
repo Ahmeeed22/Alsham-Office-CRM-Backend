@@ -154,6 +154,19 @@ const searchCustomers = catchAsyncError(async (req, res, next) => {
     // }
 })
 
+const getAllSumDepositCustomers = catchAsyncError(async (req, res, next) => {
+
+    const sum = await Customer.sum("deposite", {
+        where: {
+          active: true, // You can add any conditions you need here
+          company_id:req.loginData.company_id
+        },
+      });
+  
+
+    res.status(StatusCodes.OK).json({ message: "success", result:{sumDeposite: sum} })
+
+})
 
 
-module.exports = { getAllCustomers, addCustomer, updateCustomer, deleteCustomer, searchCustomers }
+module.exports = { getAllCustomers, addCustomer, updateCustomer, deleteCustomer, searchCustomers ,getAllSumDepositCustomers}
