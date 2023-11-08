@@ -412,9 +412,18 @@ const getAllSumBalanceCustomers = catchAsyncError(async (req, res, next) => {
       const sumCommission = await Transaction.sum("commission", {
         where: {
           active: true, // You can add any conditions you need here
-          company_id:req.loginData.company_id
+          company_id:req.loginData.company_id ,
+          comIsDone : false
         },
       });
+
+      const sumCommissionPaied= await Transaction.sum('commission',{
+        where:{
+            active :true ,
+            company_id : req.loginData.company_id ,
+            comIsDone : true
+         }
+      })
 
     //   filterObjAccount.where = { ...filterObj.where, type: 'expenses' }
       // console.log("filterObjAccount",filterObjAccount);
@@ -460,7 +469,7 @@ const getAllSumBalanceCustomers = catchAsyncError(async (req, res, next) => {
   
 
     res.status(StatusCodes.OK).json({ message: "success", result: {sumExpenses,sumBalanceCustomers:sumbalanceDue , sumCommission , totalProfit:+totalProfit?.rows[0]?.dataValues?.total_profite_gross || 0 , totalPayment : totalProfit?.rows[0]?.dataValues?.paymentAmount || 0 ,
-        total_price_without_profite :totalProfit?.rows[0]?.dataValues?.total_price_without_profite || 0 } })
+        total_price_without_profite :totalProfit?.rows[0]?.dataValues?.total_price_without_profite || 0 , sumCommissionPaied} })
 
 })
 
