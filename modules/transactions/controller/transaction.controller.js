@@ -468,13 +468,30 @@ const getAllSumBalanceCustomers = catchAsyncError(async (req, res, next) => {
     });
 
 
+
     res.status(StatusCodes.OK).json({
         message: "success", result: {
             sumExpenses, sumBalanceCustomers: sumbalanceDue, sumCommission, totalProfit: +totalProfit?.rows[0]?.dataValues?.total_profite_gross || 0, totalPayment: totalProfit?.rows[0]?.dataValues?.paymentAmount || 0,
-            total_price_without_profite: totalProfit?.rows[0]?.dataValues?.total_price_without_profite || 0, sumCommissionPaied
+            total_price_without_profite: totalProfit?.rows[0]?.dataValues?.total_price_without_profite || 0, sumCommissionPaied ,sumBalance
         }
     })
 
 })
 
-module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary, getAllSumBalanceCustomers, }
+const sumBalance= catchAsyncError(async (req,res)=>{
+    let sumBalance = await Transaction.findAll({
+        attributes: [
+          [Sequelize.fn('SUM', Sequelize.col('balanceDue')), 'total_balance'],
+        ],
+        include: [{
+          model: Customer,
+          attributes: ['name'],
+        }],
+        group: ['Transaction.customer_id', 'Customer.name'],
+      }) ;
+      res.status(StatusCodes.OK).json({
+        message: "success", result: { sumBalance }
+    })
+}) 
+
+module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary, getAllSumBalanceCustomers, sumBalance}

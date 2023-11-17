@@ -1,6 +1,6 @@
 const isAuth = require('../../../common/middleare/isAuth')
 const validationRequest = require('../../../common/middleare/validationRequest')
-const { addTransaction,getAllTransactions, updateTransaction, deleteTransaction, getTransactionsSummary } = require('../controller/transaction.controller')
+const { addTransaction,getAllTransactions, updateTransaction, deleteTransaction, getTransactionsSummary, sumBalance } = require('../controller/transaction.controller')
 const { getAllTransaction, updateTransactionSchema, addTransactionSchema } = require('../joi/transaction.validation')
 const transactionsRoutes=require('express').Router()
 
@@ -10,5 +10,6 @@ transactionsRoutes.put('/updateTransaction/:id',isAuth('ALL'),validationRequest(
 transactionsRoutes.patch('/deleteTransactionSoft/:id',isAuth('ALL'),deleteTransaction)
 // transactionsRoutes.get('/searchTransaction',searchTransactions)
 transactionsRoutes.post('/getTransactionsSummary',isAuth('ALL'),getTransactionsSummary)
+transactionsRoutes.get('/sumBalance',isAuth('ALL'),sumBalance)
 
 module.exports=transactionsRoutes;
