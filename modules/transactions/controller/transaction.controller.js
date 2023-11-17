@@ -13,6 +13,7 @@ const TransactionAccountBanking = require("../../bankingTransactionHistory/model
 const BankAccount = require("../../banking/model/bank.model");
 const Supplier = require("../../supplier/model/supplier.model");
 const SupplierStatementAccount = require("../../supplierStatementAccount/model/supplierStatementAccount.model");
+const sequelize = require("../../../configrations/sequelize");
 
 const logger = new LoggerService('transaction.controller')
 
@@ -478,20 +479,43 @@ const getAllSumBalanceCustomers = catchAsyncError(async (req, res, next) => {
 
 })
 
-const sumBalance= catchAsyncError(async (req,res)=>{
-    let sumBalance = await Transaction.findAll({
-        attributes: [
-          [Sequelize.fn('SUM', Sequelize.col('balanceDue')), 'total_balance'],
-        ],
-        include: [{
-          model: Customer,
-          attributes: ['name'],
-        }],
-        group: ['Transaction.customer_id', 'Customer.name'],
-      }) ;
-      res.status(StatusCodes.OK).json({
-        message: "success", result: { sumBalance } 
-    })
-}) 
+// const sumBalance= catchAsyncError(async (req,res)=>{
+//     let sumBalance = await Transaction.findAll({
+//         attributes: [
+//           [Sequelize.fn('SUM', Sequelize.col('balanceDue')), 'total_balance'],
+//         ],
+//         include: [{
+//           model: Customer,
+//           attributes: ['name'],
+//         }],
+//         group: ['Transaction.customer_id', 'Customer.name'],
+//       }) ;
+//       res.status(StatusCodes.OK).json({
+//         message: "success", result: { sumBalance } 
+//     })
+// })
+const sumBalance = catchAsyncError(async (req, res) => {
+    const sumBalanceQuery = `
+      SELECT
+        customers.name,
+        SUM(transactions.balanceDue) AS total_balance
+      FROM
+        transactions
+      INNER JOIN
+        customers ON transactions.customer_id = customers.id
+      GROUP BY
+        transactions.customer_id, customers.name;
+    `;
+  
+    const sumBalanceResult = await sequelize.query(sumBalanceQuery, {
+      type: Sequelize.QueryTypes.SELECT,
+    });
+  
+    res.status(StatusCodes.OK).json({
+      message: "success",
+      result: { sumBalance: sumBalanceResult },
+    });
+  });
+  
 
 module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary, getAllSumBalanceCustomers, sumBalance}
