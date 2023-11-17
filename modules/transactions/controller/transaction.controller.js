@@ -490,7 +490,7 @@ const sumBalance= catchAsyncError(async (req,res)=>{
         group: ['Transaction.customer_id', 'Customer.name'],
       }) ;
       res.status(StatusCodes.OK).json({
-        message: "success", result: { sumBalance }
+        message: "success", result: { sumBalance } 
     })
 }) 
 
