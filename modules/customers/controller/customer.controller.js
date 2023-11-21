@@ -124,8 +124,14 @@ const searchCustomers = catchAsyncError(async (req, res, next) => {
     if (indexInputs.active == 0 || indexInputs.active == 1) {
         filterObj.where["active"] = indexInputs.active
     }
+    if (indexInputs.deposite) {
+        filterObj.where["deposite"] = {
+            [Op.gt] : 0
+        }
+    }
 
-    if (filterObj.where.name || filterObj.where.active == 0 || filterObj.where.active == 1) {
+    if (filterObj.where.name || filterObj.where.active == 0 || filterObj.where.active == 1 || indexInputs.deposite) {
+        console.log("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr");
         let customers = await Customer.findAll({ ...filterObj   ,include:[
              {model:Transaction,attributes: ['paymentAmount','balanceDue', "id"]},
              { model: DepositHistory ,order: [['createdAt', 'DESC']]}

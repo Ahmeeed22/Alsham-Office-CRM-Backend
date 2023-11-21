@@ -508,8 +508,8 @@ const sumBalance = catchAsyncError(async (req, res) => {
     `;
   
     const sumBalanceResult = await sequelize.query(sumBalanceQuery, {
-      type: Sequelize.QueryTypes.SELECT,
-    });
+      type: Sequelize.QueryTypes.SELECT, 
+    });  
   
     res.status(StatusCodes.OK).json({
       message: "success",
