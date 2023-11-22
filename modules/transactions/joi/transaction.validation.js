@@ -45,7 +45,8 @@ module.exports = {
             comIsDone :Joi.boolean(),
             commission : Joi.number().default(0),
             com: Joi.boolean() ,
-        }).min(1)
+            isCheck: Joi.boolean() ,
+        }).min(1) 
     },
     getAllTransaction:{
         body:Joi.object().required().keys({

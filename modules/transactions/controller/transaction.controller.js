@@ -201,7 +201,7 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
         console.log('req.body', req.body,);
         var transactionUpdated = await Transaction.update(req.body, { where: { id } });
         res.status(StatusCodes.OK).json({ message: "success" });
-    }
+    } 
 
     if ((req.body.paymentAmount + req.body.balanceDue) == ((req.body.price + req.body.profite) * req.body.quantity)) {
 

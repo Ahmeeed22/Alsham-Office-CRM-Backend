@@ -54,6 +54,10 @@ const Transaction =sequelize.define('transaction',{
     sponsoredName : {
         type : Sequelize.STRING,
         allowNull:true 
+    },
+    isCheck : {
+        type :Sequelize.BOOLEAN,
+        defaultValue: false 
     }
 });
       // Transaction.belongsTo(User, {
