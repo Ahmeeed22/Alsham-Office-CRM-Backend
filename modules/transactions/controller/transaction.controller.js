@@ -380,25 +380,19 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     })
     var sumExpenses = +transactionAccountSumExpenses?.rows[0]?.dataValues?.sumExpenses || 0;
 
-    var filterPettyCash = {
-        company_id: req.loginData?.company_id || 1,
-        name: {
-            [Op.like]: `%petty Cash%`
-        }
-    }
-    let customers = await Customer.findAll({ where: filterPettyCash, include: [{ model: Transaction, attributes: ['paymentAmount', "id"] }], });
+
+
     const customersdeposit = await Customer.findAll({
         attributes: [
             [Sequelize.fn('sum', Sequelize.col('deposite')), 'totalDeposit'],
         ],
     });
-    var pettyCash = +customers[0].transactions[0]?.paymentAmount || 0;
     var totalDeposit = +customersdeposit[0].dataValues.totalDeposit || 0;
     var total_price = +transactionsInfo?.rows[0]?.dataValues?.total_price;
-    var currentCash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite - supplierBalance - banksBalance;
+    var currentCash = paymentAmount + totalDeposit - sumSupply - sumExpenses - total_price_without_profite - supplierBalance - banksBalance;
     // var cash = paymentAmount + totalDeposit + pettyCash - sumSupply - sumExpenses - total_price_without_profite -banks -suppliers ;
 
-    res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash, total_profite_gross, balanceDue, paymentAmount, count, sumSupply, transactionAccountSumExpenses, total_price, pettyCash, totalDeposit, total_price_without_profite, commission, sumCommissionPaid: sumCommissionpaid, supplierBalance, banksBalance } })
+    res.status(StatusCodes.OK).json({ message: "success", summary: { sumExpenses, currentCash, total_profite_gross, balanceDue, paymentAmount, count, sumSupply, transactionAccountSumExpenses, total_price, totalDeposit, total_price_without_profite, commission, sumCommissionPaid: sumCommissionpaid, supplierBalance, banksBalance } })
 });
 
 const getAllSumBalanceCustomers = catchAsyncError(async (req, res, next) => {
