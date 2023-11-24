@@ -369,7 +369,7 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     var sumSupply = +transactionAccountSumSupply?.rows[0]?.dataValues?.sumSupply || 0;
 
     filterObjAccount.where = { ...filterObj.where, type: 'expenses' }
-    // console.log("filterObjAccount",filterObjAccount);
+    console.log("filterObjAccount 888888888888888888888888888888888888888888888888",filterObj.where);
     var transactionAccountSumExpenses = await TransactionAccount.findAndCountAll({
         ...filterObjAccount, attributes: [
 
