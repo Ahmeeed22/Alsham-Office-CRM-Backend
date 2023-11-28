@@ -14,6 +14,7 @@ const BankAccount = require("../../banking/model/bank.model");
 const Supplier = require("../../supplier/model/supplier.model");
 const SupplierStatementAccount = require("../../supplierStatementAccount/model/supplierStatementAccount.model");
 const sequelize = require("../../../configrations/sequelize");
+const Owners = require("../../owners/model/owners.model");
 
 const logger = new LoggerService('transaction.controller')
 
@@ -511,5 +512,91 @@ const sumBalance = catchAsyncError(async (req, res) => {
     });
   });
   
+const calcCash = catchAsyncError ( async (req ,res) => {
 
-module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary, getAllSumBalanceCustomers, sumBalance}
+    const totalProfit = await Transaction.findAndCountAll({
+        where: {
+            active: true, // You can add any conditions you need here
+            company_id: req.loginData.company_id
+        }, attributes: [
+            [
+                Sequelize.fn(
+                    'SUM',
+                    Sequelize.where(Sequelize.col('price'), '*', Sequelize.col('quantity'))
+                ),
+                'total_price_without_profite'
+            ],
+            [
+                Sequelize.fn('sum', Sequelize.col('paymentAmount')), 'paymentAmount'
+            ]
+        ],
+    });
+
+    const total_price_without_profite = totalProfit?.rows[0]?.dataValues?.total_price_without_profite || 0 ;
+    const totalPayment = totalProfit?.rows[0]?.dataValues?.paymentAmount || 0 ;
+
+    const sum = await Customer.sum("deposite", {
+        where: {
+          active: true, // You can add any conditions you need here
+          company_id:req.loginData.company_id
+        },
+      });
+    const customersDeposites= sum ;  
+
+    const drowingSum = await Owners.sum("amount", {
+        where: {
+          type: "drowing",
+          active: true, // You can add any additional conditions here
+          company_id:req.loginData.company_id
+        },
+      });
+  
+    const investSum = await Owners.sum("amount", {
+        where: {
+            type: "invest",
+            active: true, // You can add any additional conditions here
+            company_id:req.loginData.company_id
+        },
+    });
+
+    const sumCommissionPaied = await Transaction.sum('commission', {
+        where: {
+            active: true,
+            company_id: req.loginData.company_id,
+            comIsDone: true
+        }
+    })
+
+    var suppliers = await Supplier.sum('balance',{
+        where: { company_id: req?.loginData.company_id }
+    });
+
+    var banks = await BankAccount.sum('balance',{
+        where: { company_id: req?.loginData.company_id }
+    })
+
+    var transactionAccountSumExpenses = await TransactionAccount.findAndCountAll({
+        where : {
+            type: 'expenses' ,
+            company_id: req?.loginData.company_id ,
+            active :true
+        }
+        , attributes: [
+
+            [
+                Sequelize.fn('sum', Sequelize.col('amount')), 'sumExpenses'
+            ]
+        ],
+    })
+    const sumExpenses = +transactionAccountSumExpenses?.rows[0]?.dataValues?.sumExpenses || 0;
+
+    const cash = totalPayment + customersDeposites + investSum - drowingSum - sumExpenses - total_price_without_profite - suppliers - banks - sumCommissionPaied ;
+
+    res.status(StatusCodes.OK).json({
+        message: "success",
+        result: { cash , totalPayment , customersDeposites , investSum , drowingSum , sumExpenses , total_price_without_profite , suppliers , banks , sumCommissionPaied},
+      });
+
+  } )
+
+module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary, getAllSumBalanceCustomers, sumBalance , calcCash}
