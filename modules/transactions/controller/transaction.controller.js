@@ -135,38 +135,49 @@ const getAllTransactions = catchAsyncError(async (req, res, next) => {
 })
 
 const addTransaction = catchAsyncError(async (req, res, next) => {
-    // try{
-    if ((req.body.paymentAmount + req.body.balanceDue) === ((req.body.price + req.body.profite) * req.body.quantity)) {
-        console.log("req.loginData  = ", req.loginData);
-        if (req.body.accountId) {
-            let bankAccount;
-            bankAccount = await BankAccount.findOne({
-                where: { id: req.body.accountId },
-            });
-            if (bankAccount && bankAccount.balance >= (req.body.price * req.body.quantity)) {
 
-                var transaction = await Transaction.create({ ...req.body, sponsoredName: `${req.body.sponsoredName} , By bank:- ${bankAccount.name}` });
-                // add history transaction
-                let date = new Date()
-                var historyTransaction = await HistoryTransactions.create({ details: `the fist payment Amount  = ${transaction.dataValues.paymentAmount} at ${date.toLocaleDateString()} ${date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()}`, transaction_id: transaction.dataValues.id, company_id: req.loginData.company_id });
+    if (req.body.accountId && req.body.normalTransaction != 'deposit') {
 
-                var transactionAccountBanking = await TransactionAccountBanking.create({ type: "withdraw", amount: req.body.price * req.body.quantity, accountId: req.body.accountId, DESC: ` ${req.body?.sponsoredName}`, empName: `${req.loginData?.name}` });
+        // check payment and balance correct or no 
+        req.body.paymentAmount = 0;
+        if (((req.body.price + req.body.profite) * req.body.quantity) != (req.body.balanceDue + req.body.paymentAmount)) {
+            res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid data of payamount and balance" })
+        }
 
-                const updatedBalance = +bankAccount.balance - (+req.body.price * +req.body.quantity);
-                const updateBankAccount = await BankAccount.update({ balance: updatedBalance }, { where: { id: bankAccount.id } });
+        let bankAccount;
+        bankAccount = await BankAccount.findOne({
+            where: { id: req.body.accountId },
+        });
+        if (bankAccount && bankAccount.balance >= (req.body.price * req.body.quantity)) {
 
-                res.status(StatusCodes.CREATED).json({ message: "success", result: transaction, historyTransaction: historyTransaction, transactionAccountBanking, updateBankAccount })
+            var transaction = await Transaction.create({ ...req.body, sponsoredName: `${req.body.sponsoredName} , By bank:- ${bankAccount.name}` });
+            // add history transaction
+            let date = new Date()
+            var historyTransaction = await HistoryTransactions.create({ details: `the fist payment Amount  = ${transaction.dataValues.paymentAmount} at ${date.toLocaleDateString()} ${date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()}`, transaction_id: transaction.dataValues.id, company_id: req.loginData.company_id });
 
-            } else {
-                res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid bank account or Insufficient balance." })
-            }
-        } else if (req.body.visa) {
-            // handle here visa transaction apply 
-            let supplierAccount;
-            supplierAccount = await Supplier.findOne({
-                where: { id: req.body.supplierId },
-            });
-            // if (supplierAccount && supplierAccount.balance >= (req.body.price * req.body.quantity)) {  
+            var transactionAccountBanking = await TransactionAccountBanking.create({ type: "withdraw", amount: req.body.price * req.body.quantity, accountId: req.body.accountId, DESC: ` ${req.body?.sponsoredName}`, empName: `${req.loginData?.name}` });
+
+            const updatedBalance = +bankAccount.balance - (+req.body.price * +req.body.quantity);
+            const updateBankAccount = await BankAccount.update({ balance: updatedBalance }, { where: { id: bankAccount.id } });
+
+            res.status(StatusCodes.CREATED).json({ message: "success", result: transaction, historyTransaction: historyTransaction, transactionAccountBanking, updateBankAccount })
+
+        } else {
+            res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid bank account or Insufficient balance." })
+        }
+    } else if (req.body.supplierId && req.body.normalTransaction != 'deposit') {
+        // HANDLE PAYMENT AND BALANCE due
+        req.body.paymentAmount = 0;
+        if (((req.body.price + req.body.profite) * req.body.quantity) != (req.body.balanceDue + req.body.paymentAmount)) {
+            res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid data of payamount and balance" })
+        }
+        // handle here visa transaction apply 
+        let supplierAccount;
+        supplierAccount = await Supplier.findOne({
+            where: { id: req.body.supplierId },
+        });
+        // && supplierAccount.balance >= (req.body.price * req.body.quantity)
+        if (supplierAccount) {
             const transaction = await Transaction.create(req.body);
             const supplierStatementAccount = await SupplierStatementAccount.create({ type: "debit", amount: req.body.price * req.body.quantity, supplierId: req.body.supplierId, desc: `${req.body.sponsoredName}`, empName: `${req.loginData?.name}` });
 
@@ -175,19 +186,31 @@ const addTransaction = catchAsyncError(async (req, res, next) => {
 
             res.status(StatusCodes.CREATED).json({ message: "success", result: transaction, supplierStatementAccount, updateSupplierAccount })
 
-            // }else{
-            //     res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid supplier account or Insufficient balance." }) ;      
-            // }    
+        } else {
+            res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid supplier account or Insufficient balance." });
         }
+    } else if (req.body.normalTransaction == 'deposit') {
+        let bankAccount;
+        bankAccount = await BankAccount.findOne({
+            where: { id: req.body.accountId },
+        });
+        bankAccount ? ' ' : res.status(StatusCodes.BAD_REQUEST).json({ message: 'invalid bank account' });
+
+        var transaction = await Transaction.create({ ...req.body, balanceDue: 0, sponsoredName: `${req.body.sponsoredName} , deposite on  bank:- ${bankAccount.name}` });
+        // add history transaction
+        let date = new Date()
+        // var historyTransaction = await HistoryTransactions.create({ details: `the fist payment Amount  = ${transaction.dataValues.paymentAmount} at ${date.toLocaleDateString()} ${date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()}`, transaction_id: transaction.dataValues.id, company_id: req.loginData.company_id });
+
+        var transactionAccountBanking = await TransactionAccountBanking.create({ type: "deposit", amount: req.body.paymentAmount, accountId: req.body.accountId, DESC: ` ${req.body?.sponsoredName}`, empName: `${req.loginData?.name}` });
 
 
-    } else {
-        res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid data of payamount and balance" })
+        const updatedBalance = +bankAccount.balance + (+req.body.paymentAmount);
+        const updateBankAccount = await BankAccount.update({ balance: updatedBalance }, { where: { id: bankAccount.id } });
+
+        res.status(StatusCodes.CREATED).json({ message: "success", result: transaction, historyTransaction: historyTransaction, transactionAccountBanking, updateBankAccount })
+
     }
 
-    // } catch (error) {
-    //     // res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message : 'error' , error})
-    // }
 })
 
 const updateTransaction = catchAsyncError(async (req, res, next) => {
@@ -198,13 +221,15 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
         next(new AppError("this id not valid", 400))
     // res.status(StatusCodes.BAD_REQUEST).json({message:"this id not valid"}) 
     console.log(transaction.dataValues);
+    // when check to commission paied
     if (req.body.com) {
         console.log('req.body', req.body,);
         var transactionUpdated = await Transaction.update(req.body, { where: { id } });
         res.status(StatusCodes.OK).json({ message: "success" });
-    } 
-
-    if ((req.body.paymentAmount + req.body.balanceDue) == ((req.body.price + req.body.profite) * req.body.quantity)) {
+    }
+    // handle all cases at update  
+    //(req.body.paymentAmount + req.body.balanceDue) == ((req.body.price + req.body.profite) * req.body.quantity)
+    if (req.body.accountId && req.body.paymentAmount > 0) {
 
         var transactionUpdated = await Transaction.update(req.body, { where: { id } })
         let date = new Date()
@@ -215,9 +240,7 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
     } else {
         res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid data of payamount and balance" })
     }
-    // } catch (error) {
-    //     // res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message : 'error' , error})
-    // }
+
 })
 
 const deleteTransaction = catchAsyncError(async (req, res, next) => {
@@ -370,7 +393,7 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     var sumSupply = +transactionAccountSumSupply?.rows[0]?.dataValues?.sumSupply || 0;
 
     filterObjAccount.where = { ...filterObj.where, type: 'expenses' }
-    console.log("filterObjAccount 888888888888888888888888888888888888888888888888",filterObj.where);
+    console.log("filterObjAccount 888888888888888888888888888888888888888888888888", filterObj.where);
     var transactionAccountSumExpenses = await TransactionAccount.findAndCountAll({
         ...filterObjAccount, attributes: [
 
@@ -397,8 +420,10 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
 });
 
 const getAllSumBalanceCustomers = catchAsyncError(async (req, res, next) => {
+ 
+    // get sum balance cuatomers ////////////////////////////////////////
 
-    const sumbalanceDue = await Transaction.sum("balanceDue", {
+    const sumbalanceDue = await Transaction.sum("balanceDue", { 
         where: {
             active: true, // You can add any conditions you need here
             company_id: req.loginData.company_id
@@ -468,7 +493,7 @@ const getAllSumBalanceCustomers = catchAsyncError(async (req, res, next) => {
     res.status(StatusCodes.OK).json({
         message: "success", result: {
             sumExpenses, sumBalanceCustomers: sumbalanceDue, sumCommission, totalProfit: +totalProfit?.rows[0]?.dataValues?.total_profite_gross || 0, totalPayment: totalProfit?.rows[0]?.dataValues?.paymentAmount || 0,
-            total_price_without_profite: totalProfit?.rows[0]?.dataValues?.total_price_without_profite || 0, sumCommissionPaied ,sumBalance
+            total_price_without_profite: totalProfit?.rows[0]?.dataValues?.total_price_without_profite || 0, sumCommissionPaied, sumBalance
         }
     })
 
@@ -501,18 +526,18 @@ const sumBalance = catchAsyncError(async (req, res) => {
       GROUP BY
         transactions.customer_id, customers.name;
     `;
-  
+
     const sumBalanceResult = await sequelize.query(sumBalanceQuery, {
-      type: Sequelize.QueryTypes.SELECT, 
-    });  
-  
-    res.status(StatusCodes.OK).json({
-      message: "success",
-      result: { sumBalance: sumBalanceResult },
+        type: Sequelize.QueryTypes.SELECT,
     });
-  });
-  
-const calcCash = catchAsyncError ( async (req ,res) => {
+
+    res.status(StatusCodes.OK).json({
+        message: "success",
+        result: { sumBalance: sumBalanceResult },
+    });
+});
+
+const calcCash = catchAsyncError(async (req, res) => {
 
     const totalProfit = await Transaction.findAndCountAll({
         where: {
@@ -532,30 +557,30 @@ const calcCash = catchAsyncError ( async (req ,res) => {
         ],
     });
 
-    const total_price_without_profite = totalProfit?.rows[0]?.dataValues?.total_price_without_profite || 0 ;
-    const totalPayment = totalProfit?.rows[0]?.dataValues?.paymentAmount || 0 ;
+    const total_price_without_profite = totalProfit?.rows[0]?.dataValues?.total_price_without_profite || 0;
+    const totalPayment = totalProfit?.rows[0]?.dataValues?.paymentAmount || 0;
 
     const sum = await Customer.sum("deposite", {
         where: {
-          active: true, // You can add any conditions you need here
-          company_id:req.loginData.company_id
+            active: true, // You can add any conditions you need here
+            company_id: req.loginData.company_id
         },
-      });
-    const customersDeposites= sum ;  
+    });
+    const customersDeposites = sum;
 
     const drowingSum = await Owners.sum("amount", {
         where: {
-          type: "drowing",
-          active: true, // You can add any additional conditions here
-          company_id:req.loginData.company_id
+            type: "drowing",
+            active: true, // You can add any additional conditions here
+            company_id: req.loginData.company_id
         },
-      });
-  
+    });
+
     const investSum = await Owners.sum("amount", {
         where: {
             type: "invest",
             active: true, // You can add any additional conditions here
-            company_id:req.loginData.company_id
+            company_id: req.loginData.company_id
         },
     });
 
@@ -567,19 +592,19 @@ const calcCash = catchAsyncError ( async (req ,res) => {
         }
     })
 
-    var suppliers = await Supplier.sum('balance',{
+    var suppliers = await Supplier.sum('balance', {
         where: { company_id: req?.loginData.company_id }
     });
 
-    var banks = await BankAccount.sum('balance',{
+    var banks = await BankAccount.sum('balance', {
         where: { company_id: req?.loginData.company_id }
     })
 
     var transactionAccountSumExpenses = await TransactionAccount.findAndCountAll({
-        where : {
-            type: 'expenses' ,
-            company_id: req?.loginData.company_id ,
-            active :true
+        where: {
+            type: 'expenses',
+            company_id: req?.loginData.company_id,
+            active: true
         }
         , attributes: [
 
@@ -590,13 +615,13 @@ const calcCash = catchAsyncError ( async (req ,res) => {
     })
     const sumExpenses = +transactionAccountSumExpenses?.rows[0]?.dataValues?.sumExpenses || 0;
 
-    const cash = totalPayment + customersDeposites + investSum - drowingSum - sumExpenses - total_price_without_profite - suppliers - banks - sumCommissionPaied ;
+    const cash = totalPayment + customersDeposites + investSum - drowingSum - sumExpenses - total_price_without_profite - suppliers - banks - sumCommissionPaied;
 
     res.status(StatusCodes.OK).json({
         message: "success",
-        result: { cash , totalPayment , customersDeposites , investSum , drowingSum , sumExpenses , total_price_without_profite , suppliers , banks , sumCommissionPaied},
-      });
+        result: { cash, totalPayment, customersDeposites, investSum, drowingSum, sumExpenses, total_price_without_profite, suppliers, banks, sumCommissionPaied },
+    });
 
-  } )
+})
 
-module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary, getAllSumBalanceCustomers, sumBalance , calcCash}
+module.exports = { getAllTransactions, addTransaction, updateTransaction, deleteTransaction, getTransactionsSummary, getAllSumBalanceCustomers, sumBalance, calcCash }

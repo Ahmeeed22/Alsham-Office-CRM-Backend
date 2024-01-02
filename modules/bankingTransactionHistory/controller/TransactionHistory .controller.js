@@ -14,42 +14,48 @@ const getAllTransactionHistory =catchAsyncError(async(req,res,next)=>{
 
 const addTransactionHistory=catchAsyncError(async (req,res,next)=>{
 
-        const {type, accountId ,amount , DESC}=req.body
+        const {type, accountIdCreditor , accountIdDebitor ,amount , DESC}=req.body
 
-        const bankAccount = await BankAccount.findOne({
-            where: { id:accountId },
-          });
+        const bankAccountCr = await BankAccount.findOne({
+          where: { id:accountIdCreditor },
+        });
+         const bankAccountDr = await BankAccount.findOne({
+          where: { id:accountIdDebitor },
+        });
       
-          if (!bankAccount) {
+          if (!bankAccountCr || !bankAccountDr) {
             return res.status(404).json({ message: 'Account not found.' });
           }
-      
-          let updatedBalance;
-      
-          if (type === 'deposit') {
-            updatedBalance = bankAccount.balance + amount;
-          } else if (type === 'withdraw') {
-            if (bankAccount.balance < amount) {
-              return res.status(400).json({ message: 'Insufficient balance.' });
-            }
-            updatedBalance = bankAccount.balance - amount;
-          } else {
-            return res.status(400).json({ message: 'Invalid transaction type.' });
+          if (bankAccountCr.balance < amount) {
+            return res.status(400).json({ message: 'Insufficient balance.' });
           }
       
+          let updatedBalanceCr = bankAccountCr.balance - amount;
+          let updatedBalanceDr = bankAccountDr.balance + amount;
+
+      
           // Update the bank account balance
-          await BankAccount.update({ balance: updatedBalance }, { where: { id: bankAccount.id } });
+          await BankAccount.update({ balance: updatedBalanceCr }, { where: { id: bankAccountCr.id } });
+          await BankAccount.update({ balance: updatedBalanceDr }, { where: { id: bankAccountDr.id } });
       
           // Create a transaction history record
           await TransactionAccountBanking.create({
-            accountId: bankAccount.id,
-            type,
+            accountId: bankAccountCr.id,
+            type : 'withdraw',
             amount,
             DESC
             ,empName : `${req.loginData?.name}`
-          });
-      
-          res.status(StatusCodes.CREATED).json({ message: `${type} successful.`, balance: updatedBalance });
+          }); 
+          // Create a transaction history record
+          await TransactionAccountBanking.create({
+          accountId: bankAccountDr.id,
+          type : 'deposit',
+          amount,
+          DESC
+          ,empName : `${req.loginData?.name}`
+        });
+
+          res.status(StatusCodes.CREATED).json({ message: `${type} successful.` });
 })
 
 

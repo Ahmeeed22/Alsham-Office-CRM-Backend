@@ -13,4 +13,4 @@ transactionsRoutes.post('/getTransactionsSummary',isAuth('ALL'),getTransactionsS
 transactionsRoutes.get('/sumBalance',isAuth('ALL'),sumBalance) ;
 transactionsRoutes.get('/cash',isAuth('ALL'),calcCash)
 
-module.exports=transactionsRoutes;
+module.exports=transactionsRoutes; 

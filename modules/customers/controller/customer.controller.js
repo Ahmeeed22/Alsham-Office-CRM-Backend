@@ -52,6 +52,7 @@ const updateCustomer = catchAsyncError(async (req, res, next) => {
     var x = await Customer.findOne({ where: { id } })
     if (!x)
         next(new AppError('invalid id customer', 400))
+
         var updateData={} ;
         var {name,...rest}=req.body
         if (x.dataValues.name=="petty Cash") {
@@ -59,20 +60,16 @@ const updateCustomer = catchAsyncError(async (req, res, next) => {
         }else{
             updateData={...req.body}
         }
-
-    var customer = await Customer.update(updateData, { where: { id } }) ;
+        console.log("data user will update ",updateData);
+    var customer = await Customer.update(updateData, { where: { id } }) ; 
     let depositeHistory ;
    let transactionEndPoint= req.body.transactionEndPoint ? true :false ;
-    if (req.body.deposite && req.body.deposite > 0 && !transactionEndPoint) {
-        log("tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt")
+    if (req.body.deposite !=0  && !transactionEndPoint) {
         depositeHistory=await DepositHistory.create({type: req.body.deposite>x.dataValues.deposite? 'deposit':'withdraw' , details : `update Deposit ` ,customerId :id , amount:+req.body.deposite -  +x.dataValues.deposite , deposite :req.body.deposite})
    }
 
     res.status(StatusCodes.OK).json({ message: "success", result: customer ,depositeHistory })
-    // } catch (error) {
-    //    next(new AppError('error server ',500))
-    // res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message : 'error' , error})
-    // }
+
 })
 
 const deleteCustomer = catchAsyncError(async (req, res, next) => {
@@ -162,15 +159,27 @@ const searchCustomers = catchAsyncError(async (req, res, next) => {
 
 const getAllSumDepositCustomers = catchAsyncError(async (req, res, next) => {
 
-    const sum = await Customer.sum("deposite", {
+    const sumDeposite = await Customer.sum("deposite", {
         where: {
           active: true, // You can add any conditions you need here
-          company_id:req.loginData.company_id
+          company_id:req.loginData.company_id,
+          deposite: {
+            [Sequelize.Op.gt]: 0, // Adding condition deposite > 0
+          },
+        },
+      });
+      const sumBalance = await Customer.sum("deposite", {
+        where: {
+          active: true, // You can add any conditions you need here
+          company_id:req.loginData.company_id,
+          deposite: {
+            [Sequelize.Op.lt]: 0, // Adding condition deposite > 0
+          },
         },
       });
   
 
-    res.status(StatusCodes.OK).json({ message: "success", result:{sumDeposite: sum} })
+    res.status(StatusCodes.OK).json({ message: "success", result:{sumDeposite, sumBalance : +sumBalance * -1 } })
 
 })
 

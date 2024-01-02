@@ -19,6 +19,7 @@ module.exports = {
             visa : Joi.boolean().default(false) ,
             commission : Joi.number().default(0),
             supplierId : Joi.number().optional().allow(null),
+            normalTransaction : Joi.string()
         }) 
     },
     deleteTransactionSchema:{
