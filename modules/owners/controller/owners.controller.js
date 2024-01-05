@@ -5,6 +5,7 @@ const TransactionAccountBanking = require("../../bankingTransactionHistory/model
 const Owners = require("../model/owners.model");
 const { StatusCodes } = require("http-status-codes");
 const Company = require("../../companies/model/company.model");
+const { log } = require("console");
 
 const createOwners =catchAsyncError(async (req, res) => {
     const company_id=req.loginData?.company_id ||1
@@ -52,6 +53,7 @@ const getAllOwners = catchAsyncError(async (req, res, next) => {
     }
 
     filterObj.where['company_id'] = req.loginData?.company_id || 1;
+    console.log("ererererererererererererererererererererererere copany id  erere   ",filterObj.where.company_id);
     filterObj['order'] = [
         [indexInputs?.orderBy?.coulmn || 'createdAt', indexInputs?.orderBy?.type || 'DESC'],
     ];

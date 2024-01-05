@@ -405,8 +405,11 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     var sumExpenses = +transactionAccountSumExpenses?.rows[0]?.dataValues?.sumExpenses || 0;
 
 
-
+// add filteration by company id here
     const customersdeposit = await Customer.findAll({
+        where: {
+            company_id:req.loginData.company_id
+          },
         attributes: [
             [Sequelize.fn('sum', Sequelize.col('deposite')), 'totalDeposit'],
         ],
@@ -514,6 +517,8 @@ const getAllSumBalanceCustomers = catchAsyncError(async (req, res, next) => {
 //         message: "success", result: { sumBalance } 
 //     })
 // })
+
+// 
 const sumBalance = catchAsyncError(async (req, res) => {
     const sumBalanceQuery = `
       SELECT
@@ -523,7 +528,10 @@ const sumBalance = catchAsyncError(async (req, res) => {
         transactions
       INNER JOIN
         customers ON transactions.customer_id = customers.id
-      GROUP BY
+        WHERE
+    transactions.company_id = ${req.loginData?.company_id}
+
+        GROUP BY
         transactions.customer_id, customers.name;
     `;
 

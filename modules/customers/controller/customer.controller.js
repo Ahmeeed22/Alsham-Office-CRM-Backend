@@ -177,9 +177,19 @@ const getAllSumDepositCustomers = catchAsyncError(async (req, res, next) => {
           },
         },
       });
+
+      const listDeptors = await Customer.findAll({
+       where :  {
+            active: true, // You can add any conditions you need here
+            company_id:req.loginData.company_id,
+            deposite: {
+              [Sequelize.Op.lt]: 0, // Adding condition deposite > 0
+            },
+          }
+      })
   
 
-    res.status(StatusCodes.OK).json({ message: "success", result:{sumDeposite, sumBalance : +sumBalance * -1 } })
+    res.status(StatusCodes.OK).json({ message: "success", result:{sumDeposite, sumBalance : +sumBalance * -1  , listDeptors} })
 
 })
 

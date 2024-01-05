@@ -3,7 +3,7 @@ const { getAllOwners, createOwners, getCapitalAndOwnerDrawing } = require('../co
 
 const ownersRoutes=require('express').Router() ;
 
-ownersRoutes.post("/getAllOwners",getAllOwners) ;
+ownersRoutes.post("/getAllOwners",isAuth('ALL'),getAllOwners) ;
 ownersRoutes.post("/addOwners",isAuth('ALL'),createOwners) ;
 ownersRoutes.get("/getCapitalAndOwnerDrawing",isAuth('ALL'),getCapitalAndOwnerDrawing)
 
