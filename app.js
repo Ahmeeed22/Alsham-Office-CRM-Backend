@@ -43,6 +43,7 @@ const historyDipostRoutes = require("./modules/depositHistory/routes/dipositHist
 
 const app =express();
 app.use(cors())
+app.use(cors({ origin: 'https://ahmeeed22.github.io' }));
 app.use(express.json());
 
 // wiston
