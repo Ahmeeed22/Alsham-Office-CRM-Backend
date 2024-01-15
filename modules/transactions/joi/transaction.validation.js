@@ -47,6 +47,8 @@ module.exports = {
             commission : Joi.number().default(0),
             com: Joi.boolean() ,
             isCheck: Joi.boolean() ,
+            accountId : Joi.number().optional().allow(null),
+            supplierId : Joi.number().optional().allow(null),
         }).min(1) 
     },
     getAllTransaction:{

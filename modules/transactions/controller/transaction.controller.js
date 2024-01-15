@@ -68,7 +68,9 @@ const getAllTransactions = catchAsyncError(async (req, res, next) => {
         ...filterObj
         , include: [{ model: User, attributes: ['name', "id"] },
         { model: Customer, attributes: ['name', "id"] },
-        { model: Service, attributes: ['name', "id", "desc"] },
+        { model: Service, attributes: ['name', "id"] },
+        { model: Supplier, attributes: ['name', "id", "balance"] },
+        { model: BankAccount, attributes: ['name', "id", "balance"] },
         { model: HistoryTransactions, attributes: ["details", "id", "createdAt", "transaction_id", "company_id"] }
         ]
     })
@@ -219,7 +221,6 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
     var transaction = await Transaction.findOne({ where: { id } })
     if (!transaction)
         next(new AppError("this id not valid", 400))
-    // res.status(StatusCodes.BAD_REQUEST).json({message:"this id not valid"}) 
     console.log(transaction.dataValues);
     // when check to commission paied
     if (req.body.com) {
@@ -229,13 +230,70 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
     }
     // handle all cases at update  
     //(req.body.paymentAmount + req.body.balanceDue) == ((req.body.price + req.body.profite) * req.body.quantity)
-    if (req.body.accountId && req.body.paymentAmount > 0) {
-
-        var transactionUpdated = await Transaction.update(req.body, { where: { id } })
+    console.log("ndfsbdnsfdkjgndfng fgdjngjd req.body.supplierId == ",req.body.supplierId);
+    if ((req.body.accountId && req.body.paymentAmount == 0) || (req.body.supplierId && req.body.paymentAmount == 0) ) {
         let date = new Date()
         logger.info(`Last_P = ${transaction.dataValues.paymentAmount} and New_P = ${req.body.paymentAmount - transaction.dataValues.paymentAmount} the total payment = ${req.body.paymentAmount} at ${date.toLocaleDateString()} `)
         // add history transaction
         var historyTransaction = await HistoryTransactions.create({ details: `Last_P = ${transaction.dataValues.paymentAmount} and New_P = ${req.body.paymentAmount - transaction.dataValues.paymentAmount} the total payment = ${req.body.paymentAmount} at ${date.toLocaleDateString()} ${date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()}`, transaction_id: id, company_id: req.loginData.company_id })
+
+        // update transaction
+        var transactionUpdated = await Transaction.update(req.body, { where: { id } })
+
+        // check price update 
+        if (+req.body.balanceDue > +transaction.dataValues.balanceDue) {
+            var customer = await Customer.findOne({ where: { id: req.body.customer_id } })
+            var newDeposit = customer.deposite + (-req.body.balanceDue + transaction.dataValues.balanceDue) 
+            var customerupdated = await Customer.update({ deposite : +newDeposit}, { where: { id :req.body.customer_id} });
+            console.log("tessssssssssssssssssssssssssssttttttttttttt increaaaaaaaaaaaaaase",newDeposit ,"customerupdated ", customerupdated);
+        }else if (+req.body.balanceDue < +transaction.dataValues.balanceDue) {
+            var customer = await Customer.findOne({ where: { id: req.body.customer_id } })
+            var newDeposit = customer.deposite - (req.body.balanceDue - transaction.dataValues.balanceDue) 
+            console.log("tessssssssssssssssssssssssssssttttttttttttt decreaaaaaaaaaaaaaase" , newDeposit);
+            var customerupdated = await Customer.update({ deposite : +newDeposit }, { where: { id :req.body.customer_id} });
+        }
+      // hande supplier or banks balnce 
+        if ((req.body.price * req.body.quantity) > (transaction.dataValues.price * transaction.dataValues.quantity)) {
+
+            // if normal transaction  
+            if (req.body.accountId && (transaction.dataValues.accountId ==req.body.accountId)) {
+                var transactionAccountBanking = await TransactionAccountBanking.create({ type: "withdraw", amount: ((req.body.price * req.body.quantity) - (transaction.dataValues.price * transaction.dataValues.quantity)), accountId: req.body.accountId, DESC: `update ${req.body?.sponsoredName}`, empName: `${req.loginData?.name}` });
+
+                const bankAccounnt = await BankAccount.findOne({ where: { id: req.body.accountId } })
+                const updatedBalance = +bankAccounnt.balance - ((req.body.price * req.body.quantity) - (transaction.dataValues.price * transaction.dataValues.quantity));
+                const updateBankAccount = await BankAccount.update({ balance: updatedBalance }, { where: { id: req.body.accountId } });
+            // if visa application
+            } else if (req.body.supplierId && (transaction.dataValues.supplierId ==req.body.supplierId)) {
+
+                await SupplierStatementAccount.create({ type: "debit", amount: ((req.body.price * req.body.quantity) - (transaction.dataValues.price * transaction.dataValues.quantity)), supplierId: req.body.supplierId, desc: `${req.body.sponsoredName}`, empName: `${req.loginData?.name}` });
+
+
+                const supplierAccounnt = await Supplier.findOne({ where: { id: req.body.supplierId } })
+                const updatedBalance = +supplierAccounnt.balance - ((req.body.price * req.body.quantity) - (transaction.dataValues.price * transaction.dataValues.quantity));
+                const updateSupplier = await Supplier.update({ balance: updatedBalance }, { where: { id: req.body.supplierId } });
+            }
+        } else if ((req.body.price * req.body.quantity) < (transaction.dataValues.price * transaction.dataValues.quantity)) {
+
+            if (req.body.accountId && (transaction.dataValues.accountId ==req.body.accountId)) {
+                    await TransactionAccountBanking.create({ type: "deposit", amount: ((transaction.dataValues.price * transaction.dataValues.quantity) - (req.body.price * req.body.quantity)), accountId: req.body.accountId, DESC: `update ${req.body?.sponsoredName}`, empName: `${req.loginData?.name}` });
+
+                const bankAccounnt = await BankAccount.findOne({ where: { id: req.body.accountId } })
+                const updatedBalance = +bankAccounnt.balance + ((transaction.dataValues.price * transaction.dataValues.quantity) - (req.body.price * req.body.quantity));
+
+                const updateBankAccount = await BankAccount.update({ balance: updatedBalance }, { where: { id: req.body.accountId } });
+            }else if (req.body.supplierId && (transaction.dataValues.supplierId ==req.body.supplierId)) {
+
+                await SupplierStatementAccount.create({ type: "credit", amount: ((transaction.dataValues.price * transaction.dataValues.quantity) - (req.body.price * req.body.quantity)), supplierId: req.body.supplierId, desc: `${req.body.sponsoredName}`, empName: `${req.loginData?.name}` });
+                const supplierAccounnt = await Supplier.findOne({ where: { id: req.body.supplierId } })
+                
+                const updatedBalance = +supplierAccounnt.balance + ((transaction.dataValues.price * transaction.dataValues.quantity) - (req.body.price * req.body.quantity));
+
+                const updateBankAccount = await Supplier.update({ balance: updatedBalance }, { where: { id: req.body.supplierId } });
+            }
+
+        } 
+
+
         res.status(StatusCodes.OK).json({ message: "success", result: transactionUpdated, historyTransaction: historyTransaction })
     } else {
         res.status(StatusCodes.BAD_REQUEST).json({ message: "invalid data of payamount and balance" })
@@ -405,11 +463,11 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
     var sumExpenses = +transactionAccountSumExpenses?.rows[0]?.dataValues?.sumExpenses || 0;
 
 
-// add filteration by company id here
+    // add filteration by company id here
     const customersdeposit = await Customer.findAll({
         where: {
-            company_id:req.loginData.company_id
-          },
+            company_id: req.loginData.company_id
+        },
         attributes: [
             [Sequelize.fn('sum', Sequelize.col('deposite')), 'totalDeposit'],
         ],
@@ -423,10 +481,10 @@ const getTransactionsSummary = catchAsyncError(async (req, res, next) => {
 });
 
 const getAllSumBalanceCustomers = catchAsyncError(async (req, res, next) => {
- 
+
     // get sum balance cuatomers ////////////////////////////////////////
 
-    const sumbalanceDue = await Transaction.sum("balanceDue", { 
+    const sumbalanceDue = await Transaction.sum("balanceDue", {
         where: {
             active: true, // You can add any conditions you need here
             company_id: req.loginData.company_id

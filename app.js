@@ -75,6 +75,21 @@ const loggerRoute=new LoggerService('error.route')
     Transaction.belongsTo(User, {
         foreignKey: 'admin_id',
       });
+    // make relationship  between banks and transaction    
+    BankAccount.hasMany(Transaction,{
+        foreignKey : 'accountId'
+    })  
+    Transaction.belongsTo(BankAccount, {
+        foreignKey: 'accountId',
+      });
+    // make relationship  between supliers and transaction    
+    Supplier.hasMany(Transaction,{
+        foreignKey : 'supplierId'
+    })  
+    Transaction.belongsTo(Supplier, {
+        foreignKey: 'supplierId',
+      });
+
     HistoryTransactions.belongsTo(Transaction, {
         foreignKey: 'transaction_id',
     });
