@@ -240,7 +240,7 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
         // update transaction
         var transactionUpdated = await Transaction.update(req.body, { where: { id } })
 
-        // check price update 
+       // check price update  and update customer account
         if (+req.body.balanceDue > +transaction.dataValues.balanceDue) {
             var customer = await Customer.findOne({ where: { id: req.body.customer_id } })
             var newDeposit = customer.deposite + (-req.body.balanceDue + transaction.dataValues.balanceDue) 
@@ -253,7 +253,8 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
             var customerupdated = await Customer.update({ deposite : +newDeposit }, { where: { id :req.body.customer_id} });
         }
       // hande supplier or banks balnce 
-        if ((req.body.price * req.body.quantity) > (transaction.dataValues.price * transaction.dataValues.quantity)) {
+        if ((req.body.price * req.body.quantity) > (transaction.dataValues.price * transaction.dataValues.quantity)
+        && (transaction.dataValues.supplierId ==req.body.supplierId)) {
 
             // if normal transaction  
             if (req.body.accountId && (transaction.dataValues.accountId ==req.body.accountId)) {
@@ -271,8 +272,10 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
                 const supplierAccounnt = await Supplier.findOne({ where: { id: req.body.supplierId } })
                 const updatedBalance = +supplierAccounnt.balance - ((req.body.price * req.body.quantity) - (transaction.dataValues.price * transaction.dataValues.quantity));
                 const updateSupplier = await Supplier.update({ balance: updatedBalance }, { where: { id: req.body.supplierId } });
+                // handle if different supplier selected
             }
-        } else if ((req.body.price * req.body.quantity) < (transaction.dataValues.price * transaction.dataValues.quantity)) {
+        } else if ((req.body.price * req.body.quantity) < (transaction.dataValues.price * transaction.dataValues.quantity)
+        && (transaction.dataValues.supplierId ==req.body.supplierId)) {
 
             if (req.body.accountId && (transaction.dataValues.accountId ==req.body.accountId)) {
                     await TransactionAccountBanking.create({ type: "deposit", amount: ((transaction.dataValues.price * transaction.dataValues.quantity) - (req.body.price * req.body.quantity)), accountId: req.body.accountId, DESC: `update ${req.body?.sponsoredName}`, empName: `${req.loginData?.name}` });
@@ -285,13 +288,28 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
 
                 await SupplierStatementAccount.create({ type: "credit", amount: ((transaction.dataValues.price * transaction.dataValues.quantity) - (req.body.price * req.body.quantity)), supplierId: req.body.supplierId, desc: `${req.body.sponsoredName}`, empName: `${req.loginData?.name}` });
                 const supplierAccounnt = await Supplier.findOne({ where: { id: req.body.supplierId } })
-                
+
                 const updatedBalance = +supplierAccounnt.balance + ((transaction.dataValues.price * transaction.dataValues.quantity) - (req.body.price * req.body.quantity));
 
                 const updateBankAccount = await Supplier.update({ balance: updatedBalance }, { where: { id: req.body.supplierId } });
             }
 
         } 
+
+        if (req.body.supplierId && (transaction.dataValues.supplierId !=req.body.supplierId)){
+            console.log("tttttttttttttttttttttttttrrrrrrrrrrrrrrrrrrrwwwwwwwwwwwwww " );
+            const supplierAccounntOld = await Supplier.findOne({ where: { id: transaction.dataValues.supplierId } }) ;
+            const SupplierbalanceOld = +supplierAccounntOld.dataValues.balance  + (transaction.dataValues.price * transaction.dataValues.quantity);
+            await Supplier.update({ balance: SupplierbalanceOld }, { where: { id: transaction.dataValues.supplierId } });
+            await SupplierStatementAccount.create({ type: "credit", amount: ((transaction.dataValues.price * transaction.dataValues.quantity)), supplierId: transaction.dataValues.supplierId, desc: `${req.body.sponsoredName}`, empName: `${req.loginData?.name}` });
+
+            const supplierAccounntNew = await Supplier.findOne({ where: { id: req.body.supplierId } }) ;
+            const supplierBalanceNew= +supplierAccounntNew.dataValues.balance - (req.body.price * req.body.quantity);
+            await Supplier.update({ balance: supplierBalanceNew }, { where: { id: req.body.supplierId } });
+            await SupplierStatementAccount.create({ type: "debit", amount: (req.body.price * req.body.quantity), supplierId: req.body.supplierId, desc: `${req.body.sponsoredName}`, empName: `${req.loginData?.name}` });
+
+        }
+
 
 
         res.status(StatusCodes.OK).json({ message: "success", result: transactionUpdated, historyTransaction: historyTransaction })
