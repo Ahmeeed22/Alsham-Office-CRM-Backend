@@ -42,7 +42,7 @@ const DepositHistory = require("./modules/depositHistory/model/depositHistory.mo
 const historyDipostRoutes = require("./modules/depositHistory/routes/dipositHistory.controller");
 
 const app =express();
-app.use(cors())
+// app.use(cors())
 app.use(cors({ origin: 'https://ahmeeed22.github.io' }));
 app.use(express.json());
 
