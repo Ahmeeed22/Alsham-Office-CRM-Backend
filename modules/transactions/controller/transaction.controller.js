@@ -222,9 +222,23 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
     if (!transaction)
         next(new AppError("this id not valid", 400))
     console.log(transaction.dataValues);
+
     // when check to commission paied
     if (req.body.com) {
-        console.log('req.body', req.body,);
+        console.log('req.body', req.body.bankIdCom,);
+        // update bank balance 
+        if (req.body.bankIdCom) {
+            const bankAccounnt = await BankAccount.findOne({ where: { id: req.body.bankIdCom } })
+            if (!bankAccounnt)
+            next(new AppError("this id not valid", 400))
+    
+            if( bankAccounnt.balance < req.body.value)
+                next(new AppError("please make deposit at bank first", 400))
+    
+            const updatedBalance = +bankAccounnt.balance - req.body.value;
+            const updateBankAccount = await BankAccount.update({ balance: updatedBalance }, { where: { id: req.body.bankIdCom } });
+        }
+
         var transactionUpdated = await Transaction.update(req.body, { where: { id } });
         res.status(StatusCodes.OK).json({ message: "success" });
     }
@@ -242,17 +256,42 @@ const updateTransaction = catchAsyncError(async (req, res, next) => {
 
        // check price update  and update customer account
         if (+req.body.balanceDue > +transaction.dataValues.balanceDue) {
-            var customer = await Customer.findOne({ where: { id: req.body.customer_id } })
-            var newDeposit = customer.deposite + (-req.body.balanceDue + transaction.dataValues.balanceDue) 
-            var customerupdated = await Customer.update({ deposite : +newDeposit}, { where: { id :req.body.customer_id} });
-            console.log("tessssssssssssssssssssssssssssttttttttttttt increaaaaaaaaaaaaaase",newDeposit ,"customerupdated ", customerupdated);
+            if (req.body.customer_id == transaction.dataValues.customer_id) {
+                var customer = await Customer.findOne({ where: { id: req.body.customer_id } })
+                var newDeposit = customer.deposite + (-req.body.balanceDue + transaction.dataValues.balanceDue) 
+                var customerupdated = await Customer.update({ deposite : +newDeposit}, { where: { id :req.body.customer_id} });
+                console.log("tessssssssssssssssssssssssssssttttttttttttt increaaaaaaaaaaaaaase",newDeposit ,"customerupdated ", customerupdated);
+            }
+            //  else if(req.body.customer_id != transaction.dataValues.customer_id) {
+            //     const newCustomer=await Customer.findOne({where : {id : req.body.customer_id}}) ;
+            //     const newCustomerBalance = newCustomer.deposite -  req.body.balanceDue ;
+            //     await Customer.update({deposite : newCustomerBalance}, { where : {id : newCustomer.id}}) ;
+
+            //     const oldCustomer=await Customer.findOne({where : {id : transaction.dataValues.customer_id}}) ;
+            //     const oldCustomerBalance = oldCustomer.deposite -  req.body.balanceDue ;
+            //     await Customer.update({deposite : oldCustomerBalance}, { where : {id : oldCustomer.id}}) ;
+            // }
         }else if (+req.body.balanceDue < +transaction.dataValues.balanceDue) {
-            var customer = await Customer.findOne({ where: { id: req.body.customer_id } })
-            var newDeposit = customer.deposite - (req.body.balanceDue - transaction.dataValues.balanceDue) 
-            console.log("tessssssssssssssssssssssssssssttttttttttttt decreaaaaaaaaaaaaaase" , newDeposit);
-            var customerupdated = await Customer.update({ deposite : +newDeposit }, { where: { id :req.body.customer_id} });
+            if (req.body.customer_id == transaction.dataValues.customer_id) {
+                var customer = await Customer.findOne({ where: { id: req.body.customer_id } })
+                var newDeposit = customer.deposite - (req.body.balanceDue - transaction.dataValues.balanceDue) 
+                console.log("tessssssssssssssssssssssssssssttttttttttttt decreaaaaaaaaaaaaaase" , newDeposit);
+                var customerupdated = await Customer.update({ deposite : +newDeposit }, { where: { id :req.body.customer_id} });
+            } 
         }
-      // hande supplier or banks balnce 
+        if(req.body.customer_id != transaction.dataValues.customer_id) {
+            const newCustomer=await Customer.findOne({where : {id : req.body.customer_id}}) ;
+            const newCustomerBalance = newCustomer.deposite -  req.body.balanceDue ;
+            var x =await Customer.update({deposite : newCustomerBalance}, { where : {id : newCustomer.id}}) ;
+            console.log("yaaaaaaaaaaaaaaaaaaaaaaaaaaasiiiiiiiiiiiiiiiiiiiiiiir new " ,newCustomer.id, " ttt ",newCustomerBalance , x);
+
+            const oldCustomer=await Customer.findOne({where : {id : transaction.dataValues.customer_id}}) ;
+            
+            const oldCustomerBalance = oldCustomer.deposite + req.body.balanceDue ;
+           var y = await Customer.update({deposite : oldCustomerBalance}, { where : {id : oldCustomer.id}}) ;
+            console.log("yaaaaaaaaaaaaaaaaaaaaaaaaaaasiiiiiiiiiiiiiiiiiiiiiiir old " ,oldCustomer.id," ttttt " , oldCustomerBalance , y);
+        }
+      // hande supplier or banks balnce  
         if ((req.body.price * req.body.quantity) > (transaction.dataValues.price * transaction.dataValues.quantity)
         && (transaction.dataValues.supplierId ==req.body.supplierId)) {
 

@@ -45,9 +45,11 @@ module.exports = {
             active : Joi.boolean(),
             comIsDone :Joi.boolean(),
             commission : Joi.number().default(0),
+            value : Joi.number(),
             com: Joi.boolean() ,
             isCheck: Joi.boolean() ,
             accountId : Joi.number().optional().allow(null),
+            bankIdCom : Joi.number().optional().allow(null),
             supplierId : Joi.number().optional().allow(null),
         }).min(1) 
     },
